@@ -3,506 +3,733 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PickupSports Platform</title>
+    <title>PickupSports Lisbon Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased" 
-      x-data="sportsApp()" 
-      x-init="initApp()">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased" x-data="sportsApp()">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm" x-show="currentScreen !== 'auth' && currentScreen !== 'onboarding'" x-cloak>
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <div class="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-md shadow-indigo-200 tracking-tighter">
-                    PS
-                </div>
+                <div class="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-md shadow-indigo-200">PS</div>
                 <span class="font-black text-lg tracking-tight text-slate-900">Pickup<span class="text-indigo-600">Sports</span></span>
             </div>
 
-            <nav class="flex gap-1" x-show="currentScreen !== 'onboarding'" x-cloak>
-                <button @click="currentScreen = 'discover'"
-                        :class="currentScreen === 'discover' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'"
-                        class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all">
-                    Discover
+            <nav class="flex gap-1">
+                <button @click="currentScreen = 'discover'" :class="currentScreen === 'discover' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'" class="px-3 py-2 rounded-lg text-xs font-bold transition-all">Discover</button>
+                <button @click="currentScreen = 'calendar'" :class="currentScreen === 'calendar' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'" class="px-3 py-2 rounded-lg text-xs font-bold transition-all">Calendar</button>
+                <button @click="currentScreen = 'messenger'" :class="currentScreen === 'messenger' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'" class="px-3 py-2 rounded-lg text-xs font-bold transition-all relative">
+                    Chats & Friends
+                    <span x-show="totalUnread() > 0" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] h-4 w-4 rounded-full flex items-center justify-center font-bold" x-text="totalUnread()"></span>
                 </button>
-                <button @click="currentScreen = 'calendar'"
-                        :class="currentScreen === 'calendar' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'"
-                        class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all">
-                    Calendar
-                </button>
-                <button @click="currentScreen = 'leaderboard'"
-                        :class="currentScreen === 'leaderboard' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'"
-                        class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all">
-                    Leaderboard
-                </button>
+                <button @click="currentScreen = 'leaderboard'" :class="currentScreen === 'leaderboard' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'" class="px-3 py-2 rounded-lg text-xs font-bold transition-all">Leaderboard</button>
             </nav>
 
-            <div x-show="currentScreen !== 'onboarding'" x-cloak>
-                <button @click="viewProfile(currentUser)"
-                        class="h-8 border border-indigo-200 bg-indigo-50 px-3 rounded-lg text-xs font-bold text-indigo-700 hover:bg-indigo-100 flex items-center justify-center shadow-sm">
-                    👤 <span x-text="currentUser.name.split(' ')[0] || 'Me'"></span>
+            <div>
+                <button @click="viewProfile(currentUser)" class="h-8 border border-indigo-200 bg-indigo-50 px-3 rounded-lg text-xs font-bold text-indigo-700 hover:bg-indigo-100 flex items-center gap-2 shadow-sm">
+                    <img :src="currentUser.avatarUrl" class="w-4 h-4 rounded-full">
+                    <span x-text="currentUser.name.split(' ')[0] || 'User'"></span>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 py-8">
+    <main class="max-w-5xl mx-auto px-4 py-6">
 
-        <div x-show="currentScreen === 'onboarding'" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden my-8 border border-slate-100">
-            <div class="bg-indigo-600 p-6 text-white text-center">
-                <h2 class="text-2xl font-bold">Welcome to PickupSports</h2>
-                <p class="text-indigo-100 text-sm mt-1">Let's set up your custom player card</p>
-                <div class="flex justify-center gap-2 mt-4">
-                    <template x-for="i in 6">
-                        <div :class="surveyStep === i ? 'w-8 bg-white' : 'w-2 bg-indigo-400'" class="h-2 rounded-full transition-all duration-300"></div>
-                    </template>
-                </div>
-            </div>
-
-            <div class="p-6 min-h-[340px] flex flex-col justify-between">
-                <div x-show="surveyStep === 1">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">What is your name?</label>
-                    <input type="text" x-model="currentUser.name" class="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your full name">
-                </div>
-
-                <div x-show="surveyStep === 2">
-                    <label class="block text-sm font-semibold text-slate-700 mb-3">Which sports do you play?</label>
-                    <div class="space-y-2">
-                        <template x-for="sport in ['Football', 'Volleyball']">
-                            <button type="button" @click="toggleUserSport(sport)"
-                                    :class="currentUser.sports.includes(sport) ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
-                                    class="w-full flex items-center justify-between p-4 border rounded-xl font-medium transition-all">
-                                <span x-text="sport"></span>
-                                <span x-show="currentUser.sports.includes(sport)" class="text-indigo-600 font-bold">✓</span>
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <div x-show="surveyStep === 3">
-                    <label class="block text-sm font-semibold text-slate-700 mb-3">How often do you hit the field/court?</label>
-                    <div class="space-y-2">
-                        <template x-for="freq in ['Every day', '3-4x week', '1-2x week', 'Occasional / Monthly']">
-                            <button type="button" @click="currentUser.frequency = freq"
-                                    :class="currentUser.frequency === freq ? 'border-indigo-600 bg-indigo-50 font-semibold text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
-                                    class="w-full text-left p-3 border rounded-xl transition-all" x-text="freq">
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <div x-show="surveyStep === 4">
-                    <label class="block text-sm font-semibold text-slate-700 mb-3">What is your current skill level?</label>
-                    <div class="space-y-2">
-                        <template x-for="level in ['Beginner', 'Intermediate', 'Advanced', 'Expert']">
-                            <button type="button" @click="currentUser.skill = level"
-                                    :class="currentUser.skill === level ? 'border-indigo-600 bg-indigo-50 font-semibold text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
-                                    class="w-full text-left p-3 border rounded-xl transition-all" x-text="level">
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <div x-show="surveyStep === 5">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Where do you live?</label>
-                    <input type="text" x-model="currentUser.residence" class="w-full border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Cascais, Sintra, Benfica">
-                </div>
-
-                <div x-show="surveyStep === 6">
-                    <label class="block text-sm font-semibold text-slate-700 mb-3">Select your preferred playing region:</label>
-                    <div class="space-y-2">
-                        <template x-for="reg in ['Lisbon Coast', 'Central Lisbon', 'Greater Lisbon']">
-                            <button type="button" @click="currentUser.region = reg"
-                                    :class="currentUser.region === reg ? 'border-indigo-600 bg-indigo-50 font-semibold text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
-                                    class="w-full text-left p-3 border rounded-xl transition-all" x-text="reg">
-                            </button>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-100">
-                    <button :disabled="surveyStep === 1" @click="surveyStep--" class="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-medium disabled:opacity-40">Back</button>
-                    <button x-show="surveyStep < 6" @click="surveyStep++" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium shadow-sm hover:bg-indigo-700">Next</button>
-                    <button x-show="surveyStep === 6" @click="completeOnboarding()" :disabled="!currentUser.name || currentUser.sports.length === 0 || !currentUser.region" class="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-50">Complete Registration</button>
+        <div x-show="currentScreen === 'auth'" class="max-w-md mx-auto my-12 bg-white rounded-2xl shadow-xl p-8 border border-slate-200 text-center">
+            <div class="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white mx-auto text-xl mb-4 shadow-md">PS</div>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Lisbon Pickup Portal</h2>
+            <p class="text-slate-500 text-sm mt-1 mb-6">Connect, coordinate, and climb local athletic ladders.</p>
+            
+            <div class="space-y-3">
+                <button @click="loginWithGoogle()" class="w-full border border-slate-300 hover:bg-slate-50 transition-all font-semibold p-3 rounded-xl text-sm flex items-center justify-center gap-3 text-slate-700 shadow-sm">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.107C18.435 1.221 15.62 0 12.24 0 5.58 0 0 5.37 0 12s5.58 12 12.24 12c6.96 0 11.57-4.84 11.57-11.79 0-.795-.085-1.4-.195-1.925H12.24z"/></svg>
+                    Continue with Google Auth
+                </button>
+                <div class="text-xs text-slate-400 my-4">OR USE DEMO BYPASS INSTANT ACCESSIBILITY</div>
+                <div class="flex gap-2">
+                    <button @click="bypassAuth(1650, 'Diogo (Expert)')" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2 rounded-lg">High Elo Mode</button>
+                    <button @click="bypassAuth(950, 'Tiago (Beginner)')" class="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2 rounded-lg">Low Elo Mode</button>
                 </div>
             </div>
         </div>
 
-        <div x-show="currentScreen === 'discover'" class="space-y-6" x-cloak>
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                <div class="flex gap-2">
-                    <template x-for="sport in ['All', 'Football', 'Volleyball']">
-                        <button @click="selectedSportTab = sport"
-                                :class="selectedSportTab === sport ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-                                class="px-4 py-2 rounded-lg font-medium text-sm transition-all" x-text="sport"></button>
+        <div x-show="currentScreen === 'onboarding'" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100" x-cloak>
+            <div class="bg-indigo-600 p-5 text-white text-center">
+                <h3 class="text-xl font-bold">Configure Player Metric Parameters</h3>
+                <div class="flex justify-center gap-1.5 mt-3">
+                    <template x-for="i in 5">
+                        <div :class="surveyStep === i ? 'w-6 bg-white' : 'w-2 bg-indigo-400'" class="h-1.5 rounded-full transition-all"></div>
                     </template>
                 </div>
-                <button @click="showHostForm = true" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg shadow-sm hover:bg-emerald-700 text-sm">+ Host a Match</button>
             </div>
+            <div class="p-6 min-h-[360px] flex flex-col justify-between text-xs">
+                <div x-show="surveyStep === 1" class="space-y-3">
+                    <label class="block font-bold text-slate-700">Confirm Account Profile Identity Display Name</label>
+                    <input type="text" x-model="currentUser.name" class="w-full border border-slate-200 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label class="block font-bold text-slate-700 pt-2">Residential Sub-District Sector Allocation Location</label>
+                    <input type="text" x-model="currentUser.residence" placeholder="e.g. Cascais, Benfica, Alfama" class="w-full border border-slate-200 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <template x-for="match in filteredMatches()" :key="match.id">
-                    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-start mb-3">
-                                <span :class="match.sport === 'Football' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'" class="px-2.5 py-1 rounded-full text-xs font-bold">
-                                    <span x-text="match.sport"></span> • <span x-text="match.format"></span>
-                                </span>
-                                <span :class="match.privacy === 'Public' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-purple-50 text-purple-700 border-purple-200'" class="text-xs px-2 py-0.5 rounded font-medium border" x-text="match.privacy"></span>
-                            </div>
-                            <h3 class="text-lg font-bold text-slate-800 mb-1" x-text="match.title"></h3>
-                            <p class="text-slate-500 text-sm mb-4">📍 <span x-text="match.location"></span> (<span x-text="match.region"></span>)</p>
-                            <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg text-xs font-medium text-slate-600 mb-4">
-                                <div>Date: <span class="text-slate-900 font-semibold" x-text="match.date"></span></div>
-                                <div>Time: <span class="text-slate-900 font-semibold" x-text="match.time"></span></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
-                            <span class="text-xs font-semibold text-slate-600">Roster Spots: <span class="text-indigo-600" x-text="match.roster.length"></span>/<span x-text="match.maxPlayers"></span></span>
-                            <div class="flex gap-2">
-                                <button @click="openMatchRoom(match)" class="px-3 py-1.5 border border-slate-200 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-50">Manage</button>
-                                <button @click="toggleJoinLeave(match.id)" 
-                                        :disabled="!match.roster.includes(currentUser.id) && match.roster.length >= match.maxPlayers"
-                                        :class="match.roster.includes(currentUser.id) ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'"
-                                        class="px-4 py-1.5 rounded-md text-xs font-bold shadow-sm transition-all"
-                                        x-text="match.roster.includes(currentUser.id) ? 'Leave' : 'Join'"></button>
-                            </div>
+                <div x-show="surveyStep === 2" class="space-y-2">
+                    <label class="block font-bold text-slate-700 mb-2">Check All Sports Active Profiles To Bind To Account</label>
+                    <template x-for="sport in ['Football', 'Volleyball']">
+                        <button type="button" @click="toggleUserSport(sport)" :class="currentUser.sports.includes(sport) ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600'" class="w-full flex items-center justify-between p-4 border rounded-xl font-bold transition-all">
+                            <span x-text="sport"></span>
+                            <span x-show="currentUser.sports.includes(sport)">✓</span>
+                        </button>
+                    </template>
+                </div>
+
+                <div x-show="surveyStep === 3" class="space-y-2">
+                    <label class="block font-bold text-slate-700 mb-2">How long have you been playing these sports competitively?</label>
+                    <template x-for="exp in ['Less than 1 Year', '1-3 Years (Intermediate Baseline)', '3-6 Years (Experienced Veteran)', '6+ Years (Advanced Competitive Legacy)']">
+                        <button type="button" @click="currentUser.experience = exp" :class="currentUser.experience === exp ? 'border-indigo-600 bg-indigo-50 font-bold text-indigo-700' : 'border-slate-200 text-slate-600'" class="w-full text-left p-3 border rounded-xl transition-all" x-text="exp"></button>
+                    </template>
+                </div>
+
+                <div x-show="surveyStep === 4" class="space-y-4">
+                    <label class="block font-bold text-slate-700">Check Your Primary Strategic Position Specializations</label>
+                    
+                    <div x-show="currentUser.sports.includes('Football')" class="space-y-2">
+                        <span class="block text-slate-500 font-bold tracking-wider uppercase text-[10px]">Football Strategic Roles Matrix</span>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <template x-for="pos in ['Striker', 'Winger', 'Midfielder', 'Defender', 'Goalkeeper']">
+                                <button type="button" @click="togglePosition('football', pos)" :class="currentUser.positions.football.includes(pos) ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-100 text-slate-600'" class="p-2 rounded-lg font-medium transition-all" x-text="pos"></button>
+                            </template>
                         </div>
                     </div>
-                </template>
+
+                    <div x-show="currentUser.sports.includes('Volleyball')" class="space-y-2">
+                        <span class="block text-slate-500 font-bold tracking-wider uppercase text-[10px]">Volleyball Strategic Roles Matrix</span>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <template x-for="pos in ['Setter', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker', 'Libero']">
+                                <button type="button" @click="togglePosition('volleyball', pos)" :class="currentUser.positions.volleyball.includes(pos) ? 'bg-indigo-600 text-white font-bold' : 'bg-slate-100 text-slate-600'" class="p-2 rounded-lg font-medium transition-all" x-text="pos"></button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="surveyStep === 5" class="space-y-3">
+                    <label class="block font-bold text-slate-700">Select Playing Frequency Metric</label>
+                    <select x-model="currentUser.frequency" class="w-full border border-slate-200 p-2.5 rounded-xl bg-white font-semibold">
+                        <option value="Every day">Every day</option>
+                        <option value="3-4x week">3-4x week</option>
+                        <option value="1-2x week">1-2x week</option>
+                    </select>
+                    
+                    <label class="block font-bold text-slate-700 pt-2">Select Preferred Playing Region Sector Location</label>
+                    <select x-model="currentUser.region" class="w-full border border-slate-200 p-2.5 rounded-xl bg-white font-semibold">
+                        <option value="Lisbon Coast">Lisbon Coast (Cascais / Estoril Axis)</option>
+                        <option value="Central Lisbon">Central Lisbon Municipal Zone</option>
+                        <option value="Greater Lisbon">Greater Lisbon Perimeter</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-100">
+                    <button type="button" :disabled="surveyStep === 1" @click="surveyStep--" class="px-4 py-2 border border-slate-200 rounded-lg font-bold disabled:opacity-40">Back</button>
+                    <button type="button" x-show="surveyStep < 5" @click="surveyStep++" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold">Next</button>
+                    <button type="button" x-show="surveyStep === 5" @click="completeOnboarding()" :disabled="!currentUser.name || currentUser.sports.length === 0" class="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">Complete Onboarding Card</button>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="currentScreen === 'discover'" class="space-y-8" x-cloak>
+            
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <template x-for="sport in ['All', 'Football', 'Volleyball']">
+                        <button @click="selectedSportTab = sport" :class="selectedSportTab === sport ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-slate-600 font-semibold'" class="px-4 py-1.5 rounded-md text-xs transition-all" x-text="sport"></button>
+                    </template>
+                </div>
+                <button @click="showHostForm = true" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 text-white font-bold rounded-xl shadow-sm hover:bg-emerald-700 text-xs">+ Initialize Match Creator</button>
+            </div>
+
+            <div>
+                <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-3 flex items-center gap-2">
+                    <span>Active Matchrooms Discovery Pipeline</span>
+                    <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[9px]" x-text="filteredMatches().length + ' Displayed'"></span>
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <template x-for="match in filteredMatches()" :key="match.id">
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden">
+                            <div class="absolute top-0 right-0 px-3 py-1 text-[9px] font-bold uppercase tracking-wider rounded-bl-lg" :class="match.privacy === 'Public' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'" x-text="match.privacy"></div>
+
+                            <div>
+                                <div class="mb-2">
+                                    <span :class="match.sport === 'Football' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-orange-50 text-orange-700 border-orange-200'" class="px-2 py-0.5 rounded text-[10px] font-bold border" x-text="match.sport + ' • ' + match.format"></span>
+                                    <span class="ml-1 bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-medium font-mono">Min Elo: <span x-text="match.minElo"></span></span>
+                                </div>
+
+                                <h4 class="text-base font-bold text-slate-800 mb-1" x-text="match.title"></h4>
+                                <p class="text-slate-500 text-xs mb-3 font-medium">📍 <span class="text-slate-800 font-bold" x-text="match.courtName"></span> (<span x-text="match.region"></span>)</p>
+                                
+                                <div class="grid grid-cols-2 gap-1.5 bg-slate-50 p-2.5 rounded-lg text-[11px] text-slate-600 mb-4 font-medium">
+                                    <div>Date: <span class="text-slate-900 font-bold" x-text="match.date"></span></div>
+                                    <div>Time: <span class="text-slate-900 font-bold" x-text="match.time"></span></div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <span class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Roster Allocation Lineup</span>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="pID in match.roster">
+                                            <div class="bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded text-[10px] font-semibold text-indigo-700 flex items-center gap-1">
+                                                <span x-text="getPlayerDetails(pID).name.split(' ')[0]"></span>
+                                                <span class="text-[8px] bg-indigo-200 px-1 rounded text-indigo-900 font-black" x-text="getPlayerDetails(pID).rating"></span>
+                                            </div>
+                                        </template>
+                                        <template x-for="i in (match.maxPlayers - match.roster.length)">
+                                            <div class="border border-dashed border-slate-200 bg-slate-50 text-slate-400 px-2 py-0.5 rounded text-[10px]">Open Spot</div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
+                                <span class="text-xs font-bold text-slate-600"><span class="text-indigo-600" x-text="match.roster.length"></span>/<span x-text="match.maxPlayers"></span> Positions Claimed</span>
+                                <div class="flex gap-1.5">
+                                    <button @click="openMatchRoom(match)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700">Manage Room</button>
+                                    
+                                    <button @click="executeJoinPipeline(match)" 
+                                            :disabled="match.status === 'cancelled'"
+                                            :class="match.status === 'cancelled' ? 'bg-slate-200 text-slate-400' : (match.roster.includes(currentUser.id) ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-indigo-600 text-white hover:bg-indigo-700')"
+                                            class="px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all">
+                                        <span x-show="match.status === 'cancelled'">Cancelled</span>
+                                        <span x-show="match.status !== 'cancelled'" x-text="match.roster.includes(currentUser.id) ? 'Leave' : (currentUser.rating < match.minElo ? '🔒 Request Slot' : 'Claim Slot')"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <template x-if="hasPendingRequest(match.id)">
+                                <div class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs flex flex-col justify-between gap-2">
+                                    <div>
+                                        <span class="font-bold text-amber-900 block">⚠️ Elo Clearance Registration Request Pending Voting</span>
+                                        <p class="text-slate-600 text-[11px] mt-0.5">Player <span class="font-bold text-indigo-700" x-text="getPlayerDetails(match.request.applicantId).name"></span> (Elo <span x-text="getPlayerDetails(match.request.applicantId).rating"></span>) requires absolute consensus approval vote parameters to join this lobby matrix architecture.</p>
+                                        <span class="block text-[10px] text-indigo-600 font-bold mt-1">Consensus Ledger Score: <span x-text="match.request.votersAccepted.length"></span> / <span x-text="match.roster.length"></span> Peer Votes Logged</span>
+                                    </div>
+                                    <div class="flex gap-1.5 self-end">
+                                        <template x-if="match.roster.includes(currentUser.id) && !match.request.votersAccepted.includes(currentUser.id)">
+                                            <button type="button" @click="castValidationVote(match.id)" class="px-2.5 py-1 bg-amber-600 text-white font-bold rounded text-[10px] hover:bg-amber-700">Cast Approving Vote</button>
+                                        </template>
+                                        <template x-if="match.roster.includes(currentUser.id) && match.request.votersAccepted.includes(currentUser.id)">
+                                            <span class="text-emerald-700 font-bold text-[10px] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">✓ Ballot Recorded</span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-8">
+                <div class="mb-4">
+                    <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-1">Lisbon High-Fidelity Infrastructure Directory</h3>
+                    <p class="text-slate-500 text-xs">Explore conditions, features, and active matches tied directly to structural physical field complexes.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <template x-for="court in filteredCourts()" :key="court.id">
+                        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between">
+                            <div>
+                                <div class="h-32 bg-slate-200 relative bg-cover bg-center" :style="'background-image: url(' + court.pic + ')'">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-3 flex flex-col justify-end">
+                                        <span class="text-white font-black text-sm drop-shadow" x-text="court.name"></span>
+                                        <span class="text-slate-300 text-[10px] block" x-text="court.address"></span>
+                                    </div>
+                                    <span :class="court.sport === 'Football' ? 'bg-emerald-600' : 'bg-orange-500'" class="absolute top-2 left-2 text-white font-bold text-[9px] uppercase px-2 py-0.5 rounded tracking-wider" x-text="court.sport"></span>
+                                </div>
+                                <div class="p-3 text-xs space-y-2">
+                                    <div class="flex justify-between items-center bg-slate-50 p-2 rounded-lg font-medium text-slate-600">
+                                        <span>Conditions: <span class="text-slate-900 font-bold" x-text="court.condition"></span></span>
+                                        <span class="text-amber-500 font-bold">★ <span class="text-slate-800" x-text="court.rating"></span></span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="tag in court.amenities">
+                                            <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[9px] font-bold px-1.5 py-0.5 rounded" x-text="tag"></span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-[10px] text-slate-400 font-medium font-mono" x-text="'ID Ref: ' + court.id"></span>
+                                <button @click="initializeMatchOnCourt(court)" class="px-2.5 py-1 bg-white border border-slate-200 hover:border-indigo-500 rounded font-bold text-[10px] text-indigo-600 transition-all">Book Match Here</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
 
         <div x-show="currentScreen === 'calendar'" class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm" x-cloak>
-            <h2 class="text-xl font-bold text-slate-800 mb-2">Your Personal Match Schedule</h2>
-            <p class="text-slate-500 text-sm mb-6">Tracking matches where you own a locked-in roster position.</p>
+            <div class="border-b border-slate-100 pb-4 mb-6">
+                <h2 class="text-xl font-bold text-slate-900">Personal Match Schedule Timeline</h2>
+                <p class="text-slate-500 text-sm">Tracking scheduled matches where you hold a locked-in roster alignment spot.</p>
+            </div>
 
             <div x-show="joinedMatches().length === 0" class="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl">
-                <p class="text-slate-500 font-medium">Your schedule is wide open right now.</p>
-                <button @click="currentScreen = 'discover'" class="mt-4 text-sm font-semibold text-indigo-600 hover:underline">Browse public listings to lock a spot →</button>
+                <p class="text-slate-500 font-medium text-sm">No scheduled events found on your account registry.</p>
+                <button @click="currentScreen = 'discover'" class="mt-3 text-xs font-bold text-indigo-600 hover:underline">Browse the Discovery Pipeline Hub →</button>
             </div>
 
             <div x-show="joinedMatches().length > 0" class="space-y-4">
                 <template x-for="match in joinedMatches()" :key="match.id">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border border-slate-100 bg-slate-50 rounded-xl gap-4">
-                        <div class="flex items-start gap-3">
-                          <div class="bg-indigo-600 text-white p-2.5 rounded-lg font-bold text-center min-w-[60px] shadow-sm">
-                            <span class="block text-xs uppercase opacity-80">Jul</span>
-                            <span class="text-lg leading-none" x-text="match.date.split('-')[2] || '??'"></span>
-                          </div>
-                          <div>
-                            <h4 class="font-bold text-slate-800" x-text="match.title"></h4>
-                            <p class="text-slate-500 text-xs mt-0.5">
-                              <span x-text="match.sport"></span> (<span x-text="match.format"></span>) • <span x-text="match.time"></span> • <span x-text="match.location"></span>
-                            </p>
-                          </div>
+                    <div class="p-4 border border-slate-200 bg-slate-50 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:bg-slate-100/50">
+                        <div class="flex items-start gap-4">
+                            <div class="bg-indigo-600 text-white font-bold p-3 rounded-xl min-w-[70px] text-center shadow-md shadow-indigo-100">
+                                <span class="block text-[10px] uppercase opacity-75 tracking-wider font-mono">2026</span>
+                                <span class="text-lg block leading-none font-black my-0.5" x-text="match.date.split('-')[2] || '??'"></span>
+                                <span class="block text-[9px] font-medium opacity-90" x-text="match.date.split('-')[1] ? 'July' : ''"></span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-sm" x-text="match.title"></h4>
+                                <p class="text-slate-600 text-xs font-medium mt-1">📍 <span class="text-slate-900 font-bold" x-text="match.courtName"></span> • <span x-text="match.time"></span></p>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span :class="match.sport === 'Football' ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'" class="px-2 py-0.5 text-[9px] font-bold rounded uppercase tracking-wider" x-text="match.sport"></span>
+                                    <span class="text-[11px] text-slate-400 font-medium">Roster Utilization: <span class="text-slate-700 font-bold" x-text="match.roster.length + '/' + match.maxPlayers"></span> slots</span>
+                                </div>
+                            </div>
                         </div>
-                        <button @click="openMatchRoom(match, 'chat')" class="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-indigo-600 hover:bg-slate-50 shadow-sm">
-                          💬 Match Room Chat
-                        </button>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button @click="openMatchRoom(match)" class="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg text-xs hover:bg-slate-50 shadow-sm">View Control Room</button>
+                            <button @click="openMatchRoom(match, 'chat')" class="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg text-xs hover:bg-indigo-700 shadow-sm">💬 Match Chat</button>
+                        </div>
                     </div>
                 </template>
+            </div>
+        </div>
+
+        <div x-show="currentScreen === 'messenger'" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-h-[520px]" x-cloak>
+            
+            <div class="md:col-span-1 border-r border-slate-100 pr-4 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400">Communication Pipeline Channels</h3>
+                        <button @click="showGroupCreator = true" class="text-[10px] font-bold text-indigo-600 hover:underline">+ New Group Chat</button>
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Group Channels</span>
+                        <template x-for="channel in chatChannels" :key="channel.id">
+                            <button @click="activeChannelId = channel.id" :class="activeChannelId === channel.id ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-bold' : 'border-transparent text-slate-600 hover:bg-slate-50'" class="w-full text-left p-2 rounded-xl text-xs border transition-all flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <div class="h-6 w-6 bg-slate-200 rounded-lg flex items-center justify-center text-[10px] font-bold text-slate-600">👥</div>
+                                    <span x-text="channel.name" class="truncate max-w-[120px]"></span>
+                                </div>
+                                <span x-show="channel.unread" class="bg-rose-500 text-white text-[9px] font-black h-3.5 px-1.5 rounded-full flex items-center justify-center">New</span>
+                            </button>
+                        </template>
+                    </div>
+
+                    <div class="space-y-1">
+                        <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Linked Network Friends</span>
+                        <div x-show="currentUser.friends.length === 0" class="text-slate-400 italic text-[11px] p-2">No connected accounts inside network profile. Explore local standings to link friends.</div>
+                        <template x-for="fID in currentUser.friends">
+                            <button @click="activeChannelId = getDirectChannelId(fID)" :class="activeChannelId === getDirectChannelId(fID) ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-bold' : 'border-transparent text-slate-600 hover:bg-slate-50'" class="w-full text-left p-2 rounded-xl text-xs border transition-all flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="h-6 w-6 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center text-[10px] font-bold" x-text="getPlayerDetails(fID).name.charAt(0)"></div>
+                                    <div>
+                                        <span x-text="getPlayerDetails(fID).name" class="block font-semibold"></span>
+                                        <span class="text-[9px] text-slate-400 block -mt-0.5" x-text="'Elo Standing: ' + getPlayerDetails(fID).rating"></span>
+                                    </div>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 bg-slate-50 p-2 rounded-xl text-[11px] text-slate-500 font-medium">
+                    💡 <span class="text-slate-800 font-bold">Pro Tip:</span> Tap on any player in the rankings or in match rosters to link connections or view profiles.
+                </div>
+            </div>
+
+            <div class="md:col-span-2 flex flex-col h-[480px]">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center mb-3 text-xs">
+                    <div>
+                        <span class="text-slate-400 font-bold tracking-wider uppercase text-[9px] block">Active Terminal Pipeline</span>
+                        <span class="text-slate-900 font-black text-sm" x-text="getActiveChannelName()"></span>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 min-h-0 flex flex-col justify-end">
+                    <template x-for="msg in getActiveMessages()" :key="msg.id">
+                        <div :class="msg.senderId === currentUser.id ? 'bg-indigo-600 text-white self-end rounded-tr-none' : 'bg-white text-slate-800 border border-slate-200 self-start rounded-tl-none'" class="max-w-[80%] rounded-2xl p-2.5 shadow-sm text-xs flex flex-col">
+                            <span x-show="msg.senderId !== currentUser.id" class="font-black text-indigo-600 tracking-wide text-[10px] mb-0.5" x-text="msg.senderName"></span>
+                            <p class="leading-relaxed font-medium" x-text="msg.text"></p>
+                            <span class="text-[8px] text-right mt-1 opacity-60 self-end" x-text="msg.time"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="mt-3 flex gap-2">
+                    <input type="text" x-model="messengerInput" @keydown.enter="sendMessengerMessage()" placeholder="Type communication logs entry statement string..." class="flex-1 border border-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white shadow-inner">
+                    <button @click="sendMessengerMessage()" class="px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm">Send</button>
+                </div>
             </div>
         </div>
 
         <div x-show="currentScreen === 'leaderboard'" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" x-cloak>
             <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h2 class="text-xl font-bold text-slate-800">Competitive Brackets</h2>
-                <p class="text-slate-500 text-sm">Elo rating standings isolated by sport architecture.</p>
-              </div>
-              <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                <template x-for="sport in ['Football', 'Volleyball']">
-                    <button @click="ladderSportTab = sport"
-                            :class="ladderSportTab === sport ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
-                            class="px-4 py-1.5 rounded-md text-xs font-bold transition-all" x-text="sport"></button>
-                </template>
-              </div>
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Competitive Lisbon Brackets</h2>
+                    <p class="text-slate-500 text-sm">Elo rating standings isolated by sport architecture.</p>
+                </div>
+                <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <template x-for="sport in ['Football', 'Volleyball']">
+                        <button @click="ladderSportTab = sport" :class="ladderSportTab === sport ? 'bg-white text-indigo-600 shadow-sm font-bold' : 'text-slate-600'" class="px-4 py-1.5 rounded-md text-xs transition-all" x-text="sport"></button>
+                    </template>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
-                    <th class="py-3 px-6 text-center w-16">Rank</th>
-                    <th class="py-3 px-6">Player Name</th>
-                    <th class="py-3 px-6">Skill Level</th>
-                    <th class="py-3 px-6 text-center">Record (W-L)</th>
-                    <th class="py-3 px-6 text-right pr-8">Elo Rating</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                  <template x-for="(player, index) in sortedLadder()" :key="player.id">
-                    <tr class="hover:bg-slate-50/80 transition-colors">
-                      <td class="py-4 px-6 text-center font-bold text-slate-500" x-text="index + 1"></td>
-                      <td class="py-4 px-6">
-                        <button @click="viewProfile(player)" class="font-bold text-indigo-600 hover:underline text-left block">
-                            <span x-text="player.name"></span> <span x-show="player.id === currentUser.id" class="text-xs text-slate-400 font-normal">(You)</span>
-                        </button>
-                        <span class="text-xs text-slate-400" x-text="player.region"></span>
-                      </td>
-                      <td class="py-4 px-6">
-                        <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 font-medium" x-text="player.skill || 'Unrated'"></span>
-                      </td>
-                      <td class="py-4 px-6 text-center text-slate-600 font-medium">
-                        <span x-text="player.wins"></span>W - <span x-text="player.losses"></span>L
-                      </td>
-                      <td class="py-4 px-6 text-right pr-8 font-black text-slate-800" x-text="player.rating"></td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
+            <div class="overflow-x-auto text-xs">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-100">
+                            <th class="py-3 px-6 text-center w-16">Rank</th>
+                            <th class="py-3 px-6">Player Identity Name</th>
+                            <th class="py-3 px-6">Experience Baseline</th>
+                            <th class="py-3 px-6 text-center">Record Ledger</th>
+                            <th class="py-3 px-6 text-right pr-8">Elo Rating Score</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-medium">
+                        <template x-for="(player, index) in sortedLadder()" :key="player.id">
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="py-4 px-6 text-center font-bold text-slate-400" x-text="index + 1"></td>
+                                <td class="py-4 px-6">
+                                    <button @click="viewProfile(player)" class="font-bold text-indigo-600 hover:underline text-left block">
+                                        <span x-text="player.name"></span> <span x-show="player.id === currentUser.id" class="text-slate-400 font-normal">(You)</span>
+                                    </button>
+                                    <span class="text-[10px] text-slate-400 font-mono block" x-text="player.residence + ' • ' + player.region"></span>
+                                </td>
+                                <td class="py-4 px-6 text-slate-600" x-text="player.experience || 'Not Recorded'"></td>
+                                <td class="py-4 px-6 text-center font-mono text-slate-500" x-text="player.wins + 'W - ' + player.losses + 'L'"></td>
+                                <td class="py-4 px-6 text-right pr-8 font-black text-slate-800 text-sm" x-text="player.rating"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
 
     <div x-show="selectedProfile !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
-        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100" @click.outside="selectedProfile = null">
+        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200" @click.outside="selectedProfile = null">
             <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 p-6 text-white relative">
-                <button @click="selectedProfile = null" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 px-2 py-1 rounded-full text-xs">✕</button>
-                <div class="h-14 w-14 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-xl font-black border border-white/10 mb-3" x-text="selectedProfile ? selectedProfile.name.charAt(0) : ''"></div>
+                <button @click="selectedProfile = null" class="absolute top-4 right-4 text-white/70 hover:text-white font-bold text-xs">✕</button>
+                <img :src="selectedProfile?.avatarUrl" class="h-14 w-14 rounded-xl border border-white/20 mb-2 object-cover">
                 <h3 class="text-xl font-bold" x-text="selectedProfile?.name"></h3>
-                <p class="text-indigo-200 text-xs mt-0.5">📍 Resident of <span x-text="selectedProfile?.residence || 'Unknown'"></span></p>
+                <p class="text-indigo-200 text-xs font-mono">📍 Region Base: <span x-text="selectedProfile?.region"></span></p>
             </div>
-            <div class="p-6 space-y-5">
+            <div class="p-6 space-y-4 text-xs">
                 <div>
-                  <h4 class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Onboarding Verification</h4>
-                  <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
-                    <div>
-                      <span class="block text-slate-400 font-medium">Preferred Region</span>
-                      <span class="font-bold text-slate-700" x-text="selectedProfile?.region || 'None'"></span>
+                    <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px] mb-1.5">Verified Profile Attributes</span>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium">
+                        <div><span class="text-slate-400 block text-[9px]">Residence</span><span class="text-slate-800 font-bold" x-text="selectedProfile?.residence"></span></div>
+                        <div><span class="text-slate-400 block text-[9px]">Experience</span><span class="text-slate-800 font-bold" x-text="selectedProfile?.experience || '1-3 Years'"></span></div>
+                        <div class="col-span-2 mt-1"><span class="text-slate-400 block text-[9px]">Strategic Roles</span><span class="text-indigo-700 font-bold" x-text="JSON.stringify(selectedProfile?.positions || {})"></span></div>
                     </div>
-                    <div>
-                      <span class="block text-slate-400 font-medium">Frequency Metric</span>
-                      <span class="font-bold text-slate-700" x-text="selectedProfile?.frequency || 'None'"></span>
-                    </div>
-                    <div class="mt-1">
-                      <span class="block text-slate-400 font-medium">Skill Bracket</span>
-                      <span class="font-bold text-slate-700" x-text="selectedProfile?.skill || 'None'"></span>
-                    </div>
-                    <div class="mt-1">
-                      <span class="block text-slate-400 font-medium">Verified Sports</span>
-                      <span class="font-bold text-indigo-600" x-text="selectedProfile?.sports ? selectedProfile.sports.join(', ') : 'None'"></span>
-                    </div>
-                  </div>
                 </div>
-                <div class="grid grid-cols-3 gap-2 text-center bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
-                  <div>
-                    <span class="block text-[10px] uppercase font-bold text-indigo-400">Elo Rating</span>
-                    <span class="text-lg font-black text-indigo-900" x-text="selectedProfile?.rating"></span>
-                  </div>
-                  <div>
-                    <span class="block text-[10px] uppercase font-bold text-indigo-400">Wins</span>
-                    <span class="text-lg font-black text-emerald-600" x-text="selectedProfile?.wins"></span>
-                  </div>
-                  <div>
-                    <span class="block text-[10px] uppercase font-bold text-indigo-400">Losses</span>
-                    <span class="text-lg font-black text-rose-500" x-text="selectedProfile?.losses"></span>
-                  </div>
+
+                <div class="grid grid-cols-3 gap-2 bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-xl text-center">
+                    <div><span class="block text-[9px] uppercase font-bold text-indigo-400">Elo Rank</span><span class="text-base font-black text-indigo-900" x-text="selectedProfile?.rating"></span></div>
+                    <div><span class="block text-[9px] uppercase font-bold text-indigo-400">Wins</span><span class="text-base font-black text-emerald-600" x-text="selectedProfile?.wins"></span></div>
+                    <div><span class="block text-[9px] uppercase font-bold text-indigo-400">Losses</span><span class="text-base font-black text-rose-500" x-text="selectedProfile?.losses"></span></div>
                 </div>
+
                 <button x-show="selectedProfile?.id !== currentUser.id"
                         @click="toggleFriendNetwork(selectedProfile.id)"
                         :class="currentUser.friends.includes(selectedProfile?.id) ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'"
-                        class="w-full flex items-center justify-center gap-2 p-3 rounded-xl font-bold text-sm transition-all shadow-sm border border-transparent">
-                    <span x-text="currentUser.friends.includes(selectedProfile?.id) ? '✓ Linked Network Connection' : '🔗 Link Connections Network'"></span>
+                        class="w-full py-2.5 rounded-xl font-bold transition-all border border-transparent shadow-sm flex items-center justify-center gap-1.5 text-xs">
+                    <span x-text="currentUser.friends.includes(selectedProfile?.id) ? '✓ Linked Network Connection' : '🔗 Link Account Connections Network'"></span>
                 </button>
             </div>
         </div>
     </div>
 
     <div x-show="selectedMatch !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-40" x-cloak>
-        <div class="bg-white rounded-2xl max-w-lg w-full h-[580px] overflow-hidden shadow-2xl border border-slate-100 flex flex-col" @click.outside="selectedMatch = null">
+        <div class="bg-white rounded-2xl max-w-lg w-full h-[580px] overflow-hidden shadow-2xl border border-slate-200 flex flex-col" @click.outside="selectedMatch = null">
             <div class="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
                 <div>
-                  <span class="px-2 py-0.5 rounded text-[10px] uppercase font-black bg-indigo-500 tracking-wide" x-text="selectedMatch ? selectedMatch.sport + ' • ' + selectedMatch.format : ''"></span>
-                  <h3 class="text-lg font-bold mt-1" x-text="selectedMatch?.title"></h3>
-                  <p class="text-slate-400 text-xs mt-0.5" x-text="selectedMatch?.location"></p>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-black bg-indigo-500 uppercase tracking-wider" x-text="selectedMatch?.sport + ' • ' + selectedMatch?.format"></span>
+                    <h3 class="text-lg font-bold mt-1" x-text="selectedMatch?.title"></h3>
+                    <p class="text-slate-400 text-xs mt-0.5" x-text="selectedMatch?.courtName + ' ('+selectedMatch?.region+')'"></p>
                 </div>
-                <button @click="selectedMatch = null" class="text-slate-400 hover:text-white bg-slate-800 px-2 py-1 rounded-full text-xs">✕</button>
+                <button @click="selectedMatch = null" class="text-slate-400 hover:text-white font-bold">✕</button>
             </div>
-            <div class="flex border-b border-slate-200 bg-slate-50 p-2 gap-1 shrink-0">
-                <button @click="matchViewTab = 'roster'" :class="matchViewTab === 'roster' ? 'bg-white text-slate-900 shadow-sm border-slate-200' : 'text-slate-500'" class="flex-1 py-2 text-center text-xs font-bold rounded-lg border border-transparent">Roster Framework</button>
-                <button @click="matchViewTab = 'chat'" :class="matchViewTab === 'chat' ? 'bg-white text-slate-900 shadow-sm border-slate-200' : 'text-slate-500'" class="flex-1 py-2 text-center text-xs font-bold rounded-lg border border-transparent">Live Text Chat</button>
+
+            <div class="flex border-b border-slate-200 bg-slate-50 p-1.5 gap-1 shrink-0 text-xs">
+                <button @click="matchViewTab = 'roster'" :class="matchViewTab === 'roster' ? 'bg-white text-slate-900 shadow-sm border-slate-200 font-bold' : 'text-slate-500'" class="flex-1 py-2 text-center rounded-lg border border-transparent">Roster Frame Matrix</button>
+                <button @click="matchViewTab = 'chat'" :class="matchViewTab === 'chat' ? 'bg-white text-slate-900 shadow-sm border-slate-200 font-bold' : 'text-slate-500'" class="flex-1 py-2 text-center rounded-lg border border-transparent">Match Chat Log</button>
+                <button @click="matchViewTab = 'share'" :class="matchViewTab === 'share' ? 'bg-white text-slate-900 shadow-sm border-slate-200 font-bold' : 'text-slate-500'" class="flex-1 py-2 text-center rounded-lg border border-transparent">🔗 Share Routing</button>
             </div>
-            <div class="flex-1 overflow-y-auto p-4 min-h-0 bg-slate-50/50">
+
+            <div class="flex-1 overflow-y-auto p-4 min-h-0 bg-slate-50/50 text-xs">
                 <div x-show="matchViewTab === 'roster'" class="space-y-2">
-                    <template x-for="(playerID, index) in selectedMatch?.roster || []">
+                    <template x-for="(pID, idx) in selectedMatch?.roster || []">
                         <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
                             <div class="flex items-center gap-3">
-                                <div class="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center text-xs text-indigo-700 font-bold" x-text="index + 1"></div>
-                                <button @click="viewProfile(getPlayerDetails(playerID))" class="font-bold text-slate-800 text-sm hover:underline text-left block" x-text="getPlayerDetails(playerID).name"></button>
+                                <div class="w-6 h-6 bg-indigo-50 rounded font-black text-center flex items-center justify-center text-indigo-700" x-text="idx + 1"></div>
+                                <div>
+                                    <button @click="viewProfile(getPlayerDetails(pID))" class="font-bold text-slate-800 hover:underline text-left block" x-text="getPlayerDetails(pID).name"></button>
+                                    <span class="text-[10px] text-slate-400 block -mt-0.5" x-text="'Position: ' + (selectedMatch?.playerPositions?.[pID] || 'Unassigned Outfielder')"></span>
+                                </div>
                             </div>
-                            <span x-show="selectedMatch.hostId === playerID" class="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-200">Host Manager</span>
+                            <div class="flex items-center gap-1.5">
+                                <span x-show="selectedMatch?.hostId === pID" class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[9px] border border-amber-200 uppercase">Host</span>
+                                <template x-if="pID === currentUser.id">
+                                    <button type="button" @click="resignPositionAssignment(selectedMatch.id)" class="text-rose-500 font-bold hover:underline text-[10px]">Leave</button>
+                                </template>
+                            </div>
                         </div>
                     </template>
                 </div>
-                <div x-show="matchViewTab === 'chat'" class="space-y-3 flex flex-col justify-end min-h-full">
-                    <div x-show="selectedMatch?.chat.length === 0" class="text-center text-slate-400 text-xs my-auto py-12">No communication threads logged.</div>
-                    <template x-for="chatMsg in selectedMatch?.chat || []">
-                        <div :class="chatMsg.senderId === currentUser.id ? 'bg-indigo-600 text-white self-end rounded-tr-none' : 'bg-white text-slate-800 self-start rounded-tl-none border border-slate-100'" class="max-w-[85%] rounded-2xl p-3 shadow-sm text-xs flex flex-col">
-                            <span x-show="chatMsg.senderId !== currentUser.id" class="font-black text-indigo-600 mb-0.5" x-text="chatMsg.senderName"></span>
-                            <p class="leading-relaxed font-medium" x-text="chatMsg.text"></p>
-                            <span class="text-[9px] text-right mt-1 opacity-60" x-text="chatMsg.time"></span>
+
+                <div x-show="matchViewTab === 'chat'" class="space-y-2 flex flex-col justify-end min-h-full">
+                    <div x-show="selectedMatch?.chat.length === 0" class="text-center text-slate-400 my-auto">No data payloads routed inside matchroom thread logs.</div>
+                    <template x-for="cMsg in selectedMatch?.chat || []">
+                        <div :class="cMsg.senderId === currentUser.id ? 'bg-indigo-600 text-white self-end rounded-tr-none' : 'bg-white text-slate-800 border border-slate-200 self-start rounded-tl-none'" class="max-w-[80%] rounded-xl p-2 shadow-sm">
+                            <span x-show="cMsg.senderId !== currentUser.id" class="block font-black text-indigo-600 text-[10px] mb-0.5" x-text="cMsg.senderName"></span>
+                            <p class="font-medium" x-text="cMsg.text"></p>
+                            <span class="block text-[8px] opacity-60 text-right mt-1" x-text="cMsg.time"></span>
                         </div>
                     </template>
+                </div>
+
+                <div x-show="matchViewTab === 'share'" class="space-y-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <div>
+                        <span class="block font-bold text-slate-700 mb-1">Cryptographic App Reference Deep Link String Token</span>
+                        <div class="flex gap-1.5">
+                            <input type="text" readonly :value="'https://pickupsports.pt/match/join?id=' + selectedMatch?.id" class="bg-slate-100 border border-slate-200 font-mono text-[10px] p-2 rounded-lg flex-1">
+                            <button type="button" @click="navigator.clipboard.writeText('https://pickupsports.pt/match/join?id=' + selectedMatch?.id); alert('Token copied successfully');" class="bg-slate-800 text-white px-3 font-bold rounded-lg hover:bg-slate-900">Copy Link</button>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-100 pt-3 space-y-2">
+                        <span class="block font-bold text-slate-600 uppercase text-[9px] tracking-wider">Direct Message Platform Routing Pipelines</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" @click="routeMatchToAppChats(selectedMatch.id)" class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold p-2.5 rounded-xl hover:bg-indigo-100 transition-all text-center">Send to Internal App Groups</button>
+                            <a :href="'https://api.whatsapp.com/send?text=Join my Lisbon ' + selectedMatch?.sport + ' match! https://pickupsports.pt/match/join?id=' + selectedMatch?.id" target="_blank" class="bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold p-2.5 rounded-xl hover:bg-emerald-100 transition-all text-center block">Share via WhatsApp Link</a>
+                        </div>
+                    </div>
                 </div>
             </div>
+
             <div class="p-3 bg-white border-t border-slate-200 shrink-0 flex items-center gap-2">
                 <template x-if="matchViewTab === 'chat'">
                     <div class="flex w-full gap-2">
-                        <input type="text" x-model="chatInput" @keydown.enter="sendChatMessage()" placeholder="Type coordination statement entry..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <button @click="sendChatMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Send</button>
+                        <input type="text" x-model="matchChatInput" @keydown.enter="sendMatchChatMessage()" placeholder="Type lobby statement log entry data..." class="flex-1 border border-slate-200 text-xs rounded-xl px-3 py-2">
+                        <button @click="sendMatchChatMessage()" class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-xs">Send</button>
                     </div>
                 </template>
                 <template x-if="matchViewTab === 'roster'">
-                    <button @click="toggleJoinLeave(selectedMatch.id)"
-                            :disabled="!selectedMatch.roster.includes(currentUser.id) && selectedMatch.roster.length >= selectedMatch.maxPlayers"
-                            :class="selectedMatch.roster.includes(currentUser.id) ? 'bg-rose-100 text-rose-700' : 'bg-indigo-600 text-white disabled:opacity-50'"
-                            class="w-full py-2.5 rounded-xl text-xs font-black text-center transition-all shadow-sm"
-                            x-text="selectedMatch.roster.includes(currentUser.id) ? 'Resign Roster Positioning Assignment' : 'Claim Live Open Roster Position Slot'"></button>
+                    <div class="w-full flex flex-col gap-2">
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5" x-show="!selectedMatch?.roster.includes(currentUser.id) && currentUser.rating >= selectedMatch?.minElo">
+                            <span class="block font-bold text-slate-600 text-[10px] mb-1">Select Field Position Entry Prior to Claiming Roster Slot:</span>
+                            <select x-model="selectedPositionToClaim" class="w-full bg-white border border-slate-200 p-1.5 rounded-lg text-xs font-semibold text-slate-700">
+                                <template x-for="pos in (selectedMatch?.sport === 'Football' ? ['Striker', 'Winger', 'Midfielder', 'Defender', 'Goalkeeper'] : ['Setter', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker', 'Libero'])">
+                                    <option :value="pos" x-text="pos"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <template x-if="selectedMatch?.hostId === currentUser.id">
+                                <button type="button" @click="cancelEntireMatch(selectedMatch.id)" class="w-full py-2 bg-rose-600 text-white font-black rounded-xl text-center text-xs shadow-sm tracking-wide">Cancel and Dissolve Scheduled Match Event</button>
+                            </template>
+                            <template x-if="selectedMatch?.hostId !== currentUser.id">
+                                <button @click="executeJoinPipeline(selectedMatch)" 
+                                        :disabled="!selectedMatch?.roster.includes(currentUser.id) && selectedMatch?.roster.length >= selectedMatch?.maxPlayers"
+                                        :class="selectedMatch?.roster.includes(currentUser.id) ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-indigo-600 text-white'"
+                                        class="w-full py-2.5 rounded-xl font-black text-center border text-xs"
+                                        x-text="selectedMatch?.roster.includes(currentUser.id) ? 'Resign Roster Position Assignment' : (currentUser.rating < selectedMatch?.minElo ? '🔒 Submit Peer Clearance Voting Ballot Request' : 'Claim Live Open Position Slot')"></button>
+                            </template>
+                        </div>
+                    </div>
                 </template>
             </div>
         </div>
     </div>
 
     <div x-show="showHostForm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-40" x-cloak>
-        <form @submit.prevent="executeMatchAllocation()" class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col" @click.outside="showHostForm = false">
+        <form @submit.prevent="executeMatchAllocation()" class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 flex flex-col" @click.outside="showHostForm = false">
             <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
-                <h3 class="font-black text-slate-800 text-base">Initialize Match Coordinator</h3>
-                <button type="button" @click="showHostForm = false" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                <h3 class="font-black text-slate-800 text-sm">Initialize Match Setup Allocation</h3>
+                <button type="button" @click="showHostForm = false" class="text-slate-400 font-bold">✕</button>
             </div>
+            
             <div class="p-5 space-y-4 flex-1 overflow-y-auto text-xs">
                 <div>
-                    <label class="block text-slate-600 font-bold mb-1.5">Sport Infrastructure Architecture</label>
+                    <label class="block text-slate-600 font-bold mb-1">Select Sport Architecture</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button type="button" @click="newMatch.sport = 'Football'; newMatch.format = '5v5'; newMatch.maxPlayers = 10;" :class="newMatch.sport === 'Football' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2.5 border rounded-xl font-bold text-center">Football</button>
-                        <button type="button" @click="newMatch.sport = 'Volleyball'; newMatch.format = '2v2 Beach'; newMatch.maxPlayers = 4;" :class="newMatch.sport === 'Volleyball' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2.5 border rounded-xl font-bold text-center">Volleyball</button>
+                        <button type="button" @click="newMatch.sport = 'Football'; newMatch.format = '5v5'; newMatch.maxPlayers = 10; updateSelectedCourtOptions();" :class="newMatch.sport === 'Football' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2.5 border rounded-xl font-bold text-center">Football</button>
+                        <button type="button" @click="newMatch.sport = 'Volleyball'; newMatch.format = '2v2 Beach'; newMatch.maxPlayers = 4; updateSelectedCourtOptions();" :class="newMatch.sport === 'Volleyball' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2.5 border rounded-xl font-bold text-center">Volleyball</button>
                     </div>
                 </div>
+
                 <div>
-                    <label class="block text-slate-600 font-bold mb-1.5">Formatting Constraints Variable</label>
-                    <select x-model="newMatch.format" @change="adjustFormatLimits()" class="w-full border border-slate-200 p-2.5 rounded-xl bg-white font-medium text-slate-700">
-                        <template x-if="newMatch.sport === 'Football'">
-                            <option value="5v5">5v5 Arena Match (10 total)</option>
-                        </template>
-                        <template x-if="newMatch.sport === 'Football'">
-                            <option value="7v7">7v7 Field Match (14 total)</option>
-                        </template>
-                        <template x-if="newMatch.sport === 'Volleyball'">
-                            <option value="2v2 Beach">2v2 Beach Setup (4 total)</option>
-                        </template>
-                        <template x-if="newMatch.sport === 'Volleyball'">
-                            <option value="6v6 Indoor">6v6 Indoor Standard (12 total)</option>
+                    <label class="block text-slate-600 font-bold mb-1">Select Lisbon High Fidelity Verified Infrastructure Court</label>
+                    <select x-model="newMatch.courtId" @change="syncNewMatchCourtData()" class="w-full border border-slate-200 p-2.5 rounded-xl bg-white font-semibold text-slate-700">
+                        <template x-for="c in courtsDatabase.filter(x => x.sport === newMatch.sport)">
+                            <option :value="c.id" x-text="c.name + ' (' + c.address + ')'"></option>
                         </template>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Public Display Title</label>
-                    <input type="text" required placeholder="e.g. Competitive Midweek Matches" x-model="newMatch.title" class="w-full border border-slate-200 p-2.5 rounded-xl">
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-600 font-bold mb-1">Format Constraints</label>
+                        <select x-model="newMatch.format" @change="adjustFormatLimits()" class="w-full border border-slate-200 p-2 rounded-xl bg-white">
+                            <template x-if="newMatch.sport === 'Football'">
+                                <optgroup label="Football Variants">
+                                    <option value="5v5">5v5 Arena Setup (10 Total)</option>
+                                    <option value="7v7">7v7 Grass Pitch (14 Total)</option>
+                                </optgroup>
+                            </template>
+                            <template x-if="newMatch.sport === 'Volleyball'">
+                                <optgroup label="Volleyball Variants">
+                                    <option value="2v2 Beach">2v2 Beach Arena (4 Total)</option>
+                                    <option value="6v6 Indoor">6v6 Standard Indoor (12 Total)</option>
+                                </optgroup>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 font-bold mb-1">Baseline Entry Minimum Elo</label>
+                        <input type="number" required x-model.number="newMatch.minElo" class="w-full border border-slate-200 p-2 rounded-xl text-center font-bold font-mono">
+                    </div>
                 </div>
+
+                <div>
+                    <label class="block text-slate-600 font-bold mb-1">Public Display Card Title String</label>
+                    <input type="text" required placeholder="Midweek Casual Competitive Smashes" x-model="newMatch.title" class="w-full border border-slate-200 p-2.5 rounded-xl">
+                </div>
+
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-slate-600 font-bold mb-1">Target Date</label>
-                        <input type="date" required x-model="newMatch.date" class="w-full border border-slate-200 p-2.5 rounded-xl">
+                        <input type="date" required x-model="newMatch.date" class="w-full border border-slate-200 p-2 rounded-xl">
                     </div>
                     <div>
                         <label class="block text-slate-600 font-bold mb-1">Target Start Time</label>
-                        <input type="time" required x-model="newMatch.time" class="w-full border border-slate-200 p-2.5 rounded-xl">
+                        <input type="time" required x-model="newMatch.time" class="w-full border border-slate-200 p-2 rounded-xl">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Location Complex Name</label>
-                    <input type="text" required placeholder="e.g. Carcavelos Fields Complex" x-model="newMatch.location" class="w-full border border-slate-200 p-2.5 rounded-xl">
-                </div>
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Macro Region Sector Allocation</label>
-                    <select x-model="newMatch.region" class="w-full border border-slate-200 p-2.5 rounded-xl bg-white">
-                        <option value="Lisbon Coast">Lisbon Coast</option>
-                        <option value="Central Lisbon">Central Lisbon</option>
-                        <option value="Greater Lisbon">Greater Lisbon</option>
-                    </select>
-                </div>
+
                 <div class="border-t border-slate-100 pt-3">
-                    <label class="block text-slate-600 font-bold mb-1.5">🛡️ Privacy Governance Layer</label>
-                    <div class="grid grid-cols-2 gap-2 mb-3">
+                    <label class="block text-slate-600 font-bold mb-1">🛡️ Privacy Governance Layer Access Rules</label>
+                    <div class="grid grid-cols-2 gap-2">
                         <button type="button" @click="newMatch.privacy = 'Public'" :class="newMatch.privacy === 'Public' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2 border rounded-xl font-bold text-center">Public Listing</button>
                         <button type="button" @click="newMatch.privacy = 'Private'" :class="newMatch.privacy === 'Private' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2 border rounded-xl font-bold text-center">Private Listing</button>
                     </div>
-                    <div x-show="newMatch.privacy === 'Private'" class="bg-purple-50/50 p-3 rounded-xl border border-purple-100 space-y-2">
-                        <label class="block text-purple-900 font-bold">Secondary Distribution Parameters</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" @click="newMatch.shareMethod = 'Friends Only'" :class="newMatch.shareMethod === 'Friends Only' ? 'border-purple-600 text-purple-700' : 'border-slate-200'" class="p-2 bg-white border text-center font-semibold rounded-lg text-[11px]">Friends Only</button>
-                            <button type="button" @click="newMatch.shareMethod = 'Access Code Link'" :class="newMatch.shareMethod === 'Access Code Link' ? 'border-purple-600 text-purple-700' : 'border-slate-200'" class="p-2 bg-white border text-center font-semibold rounded-lg text-[11px]">Access Code Link</button>
-                        </div>
-                        <p class="text-[10px] text-purple-600 italic mt-1" x-text="newMatch.shareMethod === 'Friends Only' ? '✓ Broadcasted only into friends lists pipelines.' : '✓ Generates a secure routing cryptographic code entry link token.'"></p>
-                    </div>
                 </div>
             </div>
+
             <div class="p-4 bg-slate-50 border-t border-slate-100 text-right shrink-0">
-                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-indigo-700 shadow-sm">Confirm Match Allocation Configuration</button>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-black py-2.5 rounded-xl shadow-md">Confirm Match Infrastructure Deployment</button>
             </div>
         </form>
+    </div>
+
+    <div x-show="showGroupCreator" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
+        <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-xs" @click.outside="showGroupCreator = false">
+            <h4 class="text-sm font-black text-slate-800 mb-3">Initialize Custom Chat Group Channel</h4>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-slate-600 font-bold mb-1">Channel Label Descriptor Name</label>
+                    <input type="text" x-model="newGroupName" placeholder="e.g. Benfica Casual Kickers Guild" class="w-full border border-slate-200 p-2 rounded-lg">
+                </div>
+                <button type="button" @click="createCustomChatGroup()" class="w-full bg-indigo-600 text-white font-bold p-2.5 rounded-lg">Generate Group Context</button>
+            </div>
+        </div>
     </div>
 
     <script>
         function sportsApp() {
             return {
-                currentScreen: 'onboarding',
+                currentScreen: 'auth',
                 surveyStep: 1,
                 selectedSportTab: 'All',
                 ladderSportTab: 'Football',
                 selectedProfile: null,
                 selectedMatch: null,
                 matchViewTab: 'roster',
-                chatInput: '',
+                matchChatInput: '',
+                messengerInput: '',
                 showHostForm: false,
+                showGroupCreator: false,
+                newGroupName: '',
+                activeChannelId: 'g1',
+                selectedPositionToClaim: 'Striker',
 
                 currentUser: {
                     id: 'me',
                     name: '',
+                    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
                     sports: [],
-                    frequency: '',
-                    skill: '',
-                    residence: '',
-                    region: '',
+                    experience: '',
+                    positions: { football: [], volleyball: [] },
+                    frequency: '3-4x week',
+                    region: 'Lisbon Coast',
                     rating: 1200,
-                    wins: 0,
-                    losses: 0,
-                    friends: ['p1']
+                    wins: 14,
+                    losses: 8,
+                    friends: ['p1', 'p2']
                 },
 
                 newMatch: {
                     sport: 'Football',
+                    courtId: 'c1',
+                    courtName: 'AirFut Soccer Pavilion',
                     format: '5v5',
+                    minElo: 1100,
                     title: '',
-                    date: '',
-                    time: '',
-                    location: '',
-                    region: 'Lisbon Coast',
+                    date: '2026-07-20',
+                    time: '19:30',
+                    region: 'Central Lisbon',
                     privacy: 'Public',
-                    shareMethod: 'Friends Only',
                     maxPlayers: 10
                 },
 
+                courtsDatabase: [
+                    { id: 'c1', name: 'AirFut Loures Complex', sport: 'Football', address: 'Estrada do Paço do Lumiar, Loures', condition: 'Indoor Synthetic (Premium Tier)', rating: '4.7', amenities: ['Showers', 'Bar', 'Free Parking', 'Pro Uniforms'], pic: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=400&q=80' },
+                    { id: 'c2', name: 'Urban Soccer Monsanto Arena', sport: 'Football', address: 'Parque de Monsanto, Lisbon', condition: 'Outdoor 3G Cage Pitch', rating: '4.5', amenities: ['Locker Rooms', 'Referees', 'Night Lights'], pic: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?auto=format&fit=crop&w=400&q=80' },
+                    { id: 'c3', name: 'Complexo São Domingos de Benfica', sport: 'Football', address: 'Rua Maria Brown, Lisbon', condition: 'Pro FIFA Synthetic Grass', rating: '4.4', amenities: ['Grandstand', 'Water Dispensers'], pic: 'https://images.unsplash.com/photo-1431324155629-1a6edd1d1315?auto=format&fit=crop&w=400&q=80' },
+                    { id: 'c4', name: 'Praia de Carcavelos Dunes Nets', sport: 'Volleyball', address: 'Carcavelos Beachfront, Cascais', condition: 'Coastal Ocean Sand Pitch', rating: '4.6', amenities: ['Public Restrooms', 'Beach Bar', 'Sunset View'], pic: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=400&q=80' },
+                    { id: 'c5', name: 'Centro Voleibol Praia Cascais (CVP)', sport: 'Volleyball', address: 'Praia da Duquesa, Cascais', condition: 'Enclosed Championship Sand', rating: '4.8', amenities: ['Pro Volleyballs Provided', 'Shade Tents'], pic: 'https://images.unsplash.com/photo-1592656094270-b989d71a55b8?auto=format&fit=crop&w=400&q=80' }
+                ],
+
                 playersList: [
-                    { id: 'p1', name: 'Alex Silva', sports: ['Football', 'Volleyball'], frequency: '3-4x week', skill: 'Advanced', residence: 'Cascais', region: 'Lisbon Coast', rating: 1450, wins: 42, losses: 12, friends: ['p2', 'p3'] },
-                    { id: 'p2', name: 'Sofia Santos', sports: ['Volleyball'], frequency: '1-2x week', skill: 'Intermediate', residence: 'Estoril', region: 'Lisbon Coast', rating: 1210, wins: 24, losses: 15, friends: ['p1'] },
-                    { id: 'p3', name: 'Diogo Costa', sports: ['Football'], frequency: 'Every day', skill: 'Expert', residence: 'Lisbon', region: 'Central Lisbon', rating: 1680, wins: 88, losses: 22, friends: ['p1'] },
-                    { id: 'p4', name: 'Mariana Vaz', sports: ['Football', 'Volleyball'], frequency: '1-2x week', skill: 'Beginner', residence: 'Sintra', region: 'Greater Lisbon', rating: 980, wins: 5, losses: 14, friends: [] }
+                    { id: 'p1', name: 'Alex Silva', avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&q=80', sports: ['Football', 'Volleyball'], experience: '3-6 Years', positions: { football: ['Midfielder'], volleyball: ['Setter'] }, residence: 'Cascais', region: 'Lisbon Coast', rating: 1450, wins: 42, losses: 12, friends: ['me'] },
+                    { id: 'p2', name: 'Sofia Santos', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80', sports: ['Volleyball'], experience: '1-3 Years', positions: { football: [], volleyball: ['Outside Hitter'] }, residence: 'Estoril', region: 'Lisbon Coast', rating: 1210, wins: 24, losses: 15, friends: ['me'] },
+                    { id: 'p3', name: 'Diogo Costa', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80', sports: ['Football'], experience: '6+ Years', positions: { football: ['Striker'] }, residence: 'Lisbon Center', region: 'Central Lisbon', rating: 1680, wins: 88, losses: 22, friends: [] },
+                    { id: 'p4', name: 'Mariana Vaz', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80', sports: ['Football', 'Volleyball'], experience: 'Less than 1 Year', positions: { football: ['Goalkeeper'], volleyball: ['Libero'] }, residence: 'Sintra', region: 'Greater Lisbon', rating: 980, wins: 5, losses: 14, friends: [] }
                 ],
 
                 matchesList: [
-                    { id: 'm1', sport: 'Football', format: '5v5', title: 'Tuesday Night Turf Battle', date: '2026-07-14', time: '20:00', location: 'Cascais Sports Center', region: 'Lisbon Coast', privacy: 'Public', hostId: 'p3', roster: ['p3', 'p1'], maxPlayers: 10, chat: [{ id: 'c1', senderId: 'p3', senderName: 'Diogo Costa', text: 'Hey team, bring a white shirt if you can!', time: '10:15' }] },
-                    { id: 'm2', sport: 'Volleyball', format: '2v2 Beach', title: 'Sunset Beach Duos', date: '2026-07-16', time: '18:30', location: 'Carcavelos Beach - Court 3', region: 'Lisbon Coast', privacy: 'Private', shareMethod: 'Friends Only', hostId: 'p1', roster: ['p1', 'p2'], maxPlayers: 4, chat: [] },
-                    { id: 'm3', sport: 'Volleyball', format: '6v6 Indoor', title: 'Indoor Power Volleyball', date: '2026-07-19', time: '15:00', location: 'Lisbon Volley Pavilion', region: 'Central Lisbon', privacy: 'Public', hostId: 'p2', roster: ['p2'], maxPlayers: 12, chat: [] }
+                    { id: 'm1', sport: 'Football', courtId: 'c1', courtName: 'AirFut Loures Complex', format: '5v5', minElo: 1300, title: 'Tuesday Night Turf Battle League', date: '2026-07-14', time: '20:00', region: 'Central Lisbon', privacy: 'Public', hostId: 'p3', roster: ['p3', 'p1'], maxPlayers: 10, playerPositions: { 'p3': 'Striker', 'p1': 'Midfielder' }, status: 'scheduled', chat: [{ id: '1', senderId: 'p3', senderName: 'Diogo Costa', text: 'Bring white shirts if possible!', time: '18:30' }], request: null },
+                    { id: 'm2', sport: 'Volleyball', courtId: 'c4', courtName: 'Praia de Carcavelos Dunes Nets', format: '2v2 Beach', minElo: 1100, title: 'Sunset Elite Beach Duos', date: '2026-07-16', time: '18:30', region: 'Lisbon Coast', privacy: 'Private', hostId: 'p1', roster: ['p1', 'p2'], maxPlayers: 4, playerPositions: { 'p1': 'Setter', 'p2': 'Outside Hitter' }, status: 'scheduled', chat: [], request: null }
                 ],
 
-                initApp() {
-                    // Custom initialization code can map properties safely if required
+                // Central App & Group Communication Log Pipelines Data Engine Record Array
+                chatChannels: [
+                    { id: 'g1', name: 'Global Lisbon Pickups Core', unread: true, messages: [{ id: 'm1', senderId: 'p3', senderName: 'Diogo Costa', text: 'Anyone up for 7v7 at Benfica this weekend?', time: '14:20' }] },
+                    { id: 'g2', name: 'Volleyball Cascais Regionals', unread: false, messages: [{ id: 'm2', senderId: 'p2', senderName: 'Sofia Santos', text: 'Nets are up at Carcavelos court 3.', time: '10:05' }] }
+                ],
+
+                loginWithGoogle() {
+                    this.currentUser.name = 'Google User Session';
+                    this.currentScreen = 'onboarding';
+                },
+
+                bypassAuth(eloScore, nameAlias) {
+                    this.currentUser.rating = eloScore;
+                    this.currentUser.name = nameAlias;
+                    this.currentScreen = 'onboarding';
                 },
 
                 toggleUserSport(sport) {
@@ -513,18 +740,36 @@
                     }
                 },
 
+                togglePosition(sport, pos) {
+                    let arr = this.currentUser.positions[sport];
+                    let idx = arr.indexOf(pos);
+                    if (idx > -1) arr.splice(idx, 1);
+                    else arr.push(pos);
+                },
+
                 completeOnboarding() {
                     this.playersList.unshift(JSON.parse(JSON.stringify(this.currentUser)));
                     this.currentScreen = 'discover';
                 },
 
                 filteredMatches() {
-                    if (this.selectedSportTab === 'All') return this.matchesList;
-                    return this.matchesList.filter(m => m.sport === this.selectedSportTab);
+                    return this.matchesList.filter(m => {
+                        // Privacy governance filtering layers
+                        if (m.privacy === 'Private' && !m.roster.includes(this.currentUser.id) && m.hostId !== this.currentUser.id) {
+                            return false;
+                        }
+                        if (this.selectedSportTab === 'All') return true;
+                        return m.sport === this.selectedSportTab;
+                    });
                 },
 
                 joinedMatches() {
                     return this.matchesList.filter(m => m.roster.includes(this.currentUser.id));
+                },
+
+                filteredCourts() {
+                    if (this.selectedSportTab === 'All') return this.courtsDatabase;
+                    return this.courtsDatabase.filter(c => c.sport === this.selectedSportTab);
                 },
 
                 sortedLadder() {
@@ -535,11 +780,11 @@
 
                 getPlayerDetails(id) {
                     if (id === this.currentUser.id) return this.currentUser;
-                    return this.playersList.find(p => p.id === id) || { name: 'Unknown Target Player' };
+                    return this.playersList.find(p => p.id === id) || { name: 'Unknown User Record', rating: 1200 };
                 },
 
-                viewProfile(playerObj) {
-                    this.selectedProfile = playerObj;
+                viewProfile(pObj) {
+                    this.selectedProfile = pObj;
                 },
 
                 toggleFriendNetwork(id) {
@@ -553,39 +798,182 @@
                 openMatchRoom(matchObj, tab = 'roster') {
                     this.selectedMatch = matchObj;
                     this.matchViewTab = tab;
+                    this.selectedPositionToClaim = matchObj.sport === 'Football' ? 'Striker' : 'Setter';
                 },
 
-                toggleJoinLeave(matchId) {
+                hasPendingRequest(matchId) {
+                    let m = this.matchesList.find(x => x.id === matchId);
+                    return m && m.request !== null;
+                },
+
+                executeJoinPipeline(match) {
+                    let target = this.matchesList.find(m => m.id === match.id);
+                    if (!target) return;
+
+                    // LEAVE/RESIGNATION INTERACTION RULE CONSTRAINTS
+                    if (target.roster.includes(this.currentUser.id)) {
+                        this.resignPositionAssignment(target.id);
+                        return;
+                    }
+
+                    // DECENTRALIZED COMPLIANCE GATEWAY FOR LOW ELO REGISTRATION APPLICANTS
+                    if (this.currentUser.rating < target.minElo) {
+                        if (target.request) {
+                            alert('An applicant submission clearance voting registry sequence is already actively pending verification.');
+                            return;
+                        }
+                        target.request = {
+                            applicantId: this.currentUser.id,
+                            position: this.selectedPositionToClaim,
+                            votersAccepted: []
+                        };
+                        alert('Security Elo parameters not cleared. Verification request broadcasted out onto active lobby ledger panels.');
+                        return;
+                    }
+
+                    // STANDARD DIRECT SELECTION FLOW
+                    if (target.roster.length < target.maxPlayers) {
+                        target.roster.push(this.currentUser.id);
+                        target.playerPositions[this.currentUser.id] = this.selectedPositionToClaim;
+                        if (this.selectedMatch && this.selectedMatch.id === target.id) this.selectedMatch = target;
+                    }
+                },
+
+                castValidationVote(matchId) {
+                    let m = this.matchesList.find(x => x.id === matchId);
+                    if (!m || !m.request) return;
+
+                    if (!m.request.votersAccepted.includes(this.currentUser.id)) {
+                        m.request.votersAccepted.push(this.currentUser.id);
+                    }
+
+                    // CONSENSUS LEDGER COMPLETION ENGINE TRIGGER RULE
+                    if (m.request.votersAccepted.length >= m.roster.length) {
+                        m.roster.push(m.request.applicantId);
+                        m.playerPositions[m.request.applicantId] = m.request.position;
+                        alert('Absolute match consensus clearance criteria met successfully. Roster updated.');
+                        m.request = null;
+                    }
+                    if (this.selectedMatch && this.selectedMatch.id === matchId) this.selectedMatch = m;
+                },
+
+                resignPositionAssignment(matchId) {
                     let target = this.matchesList.find(m => m.id === matchId);
                     if (!target) return;
 
-                    let idx = target.roster.indexOf(this.currentUser.id);
-                    if (idx > -1) {
-                        target.roster.splice(idx, 1);
-                    } else {
-                        if (target.roster.length < target.maxPlayers) {
-                            target.roster.push(this.currentUser.id);
-                        }
+                    target.roster = target.roster.filter(id => id !== this.currentUser.id);
+                    delete target.playerPositions[this.currentUser.id];
+
+                    // Wipe requests if user was the structural dependency
+                    if (target.request && target.request.applicantId === this.currentUser.id) {
+                        target.request = null;
                     }
-                    
-                    // Sync active structural references
-                    if (this.selectedMatch && this.selectedMatch.id === matchId) {
-                        this.selectedMatch = target;
-                    }
+
+                    if (this.selectedMatch && this.selectedMatch.id === matchId) this.selectedMatch = target;
+                    alert('Position assignment resigned successfully.');
                 },
 
-                sendChatMessage() {
-                    if (!this.chatInput.trim() || !this.selectedMatch) return;
-                    
+                cancelEntireMatch(matchId) {
+                    let target = this.matchesList.find(m => m.id === matchId);
+                    if (!target) return;
+                    target.status = 'cancelled';
+                    target.roster = [];
+                    this.selectedMatch = null;
+                    alert('Match allocation terminated and logs dissolved.');
+                },
+
+                sendMatchChatMessage() {
+                    if (!this.matchChatInput.trim() || !this.selectedMatch) return;
                     this.selectedMatch.chat.push({
-                        id: 'msg_' + Date.now(),
+                        id: 'chat_' + Date.now(),
                         senderId: this.currentUser.id,
-                        senderName: this.currentUser.name || 'Me',
-                        text: this.chatInput,
+                        senderName: this.currentUser.name,
+                        text: this.matchChatInput,
                         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     });
-                    
-                    this.chatInput = '';
+                    this.matchChatInput = '';
+                },
+
+                routeMatchToAppChats(matchId) {
+                    this.chatChannels.forEach(chan => {
+                        chan.messages.push({
+                            id: 'share_' + Date.now(),
+                            senderId: this.currentUser.id,
+                            senderName: 'System Broadcast',
+                            text: '🔗 SECURE ENCRYPTED PROMPT INVITE: Join my private match lobby tracking portal here: https://pickupsports.pt/match/join?id=' + matchId,
+                            time: 'Now'
+                        });
+                    });
+                    alert('Match access token payload routed onto internal active terminal windows pipelines.');
+                },
+
+                getDirectChannelId(friendId) {
+                    return 'dm_' + friendId;
+                },
+
+                getActiveChannelName() {
+                    if (this.activeChannelId.startsWith('dm_')) {
+                        let fId = this.activeChannelId.split('_')[1];
+                        return 'Direct Channel: ' + this.getPlayerDetails(fId).name;
+                    }
+                    return this.chatChannels.find(c => c.id === this.activeChannelId)?.name || 'Select Communication Pipe';
+                },
+
+                getActiveMessages() {
+                    if (this.activeChannelId.startsWith('dm_')) {
+                        return []; // Empty mock structural state placeholder logs for direct routing endpoints
+                    }
+                    return this.chatChannels.find(c => c.id === this.activeChannelId)?.messages || [];
+                },
+
+                sendMessengerMessage() {
+                    if (!this.messengerInput.trim()) return;
+                    if (this.activeChannelId.startsWith('dm_')) {
+                        alert('Direct messaging sandbox tracking is active, but payload retention requires a real database endpoint layer.');
+                        this.messengerInput = '';
+                        return;
+                    }
+                    let chan = this.chatChannels.find(c => c.id === this.activeChannelId);
+                    if (chan) {
+                        chan.messages.push({
+                            id: 'msg_' + Date.now(),
+                            senderId: this.currentUser.id,
+                            senderName: this.currentUser.name,
+                            text: this.messengerInput,
+                            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        });
+                    }
+                    this.messengerInput = '';
+                },
+
+                createCustomChatGroup() {
+                    if (!this.newGroupName.trim()) return;
+                    let id = 'g_' + Date.now();
+                    this.chatChannels.push({
+                        id: id,
+                        name: this.newGroupName,
+                        unread: false,
+                        messages: []
+                    });
+                    this.activeChannelId = id;
+                    this.newGroupName = '';
+                    this.showGroupCreator = false;
+                },
+
+                totalUnread() {
+                    return this.chatChannels.filter(c => c.unread).length;
+                },
+
+                initializeMatchOnCourt(courtObj) {
+                    this.newMatch.sport = courtObj.sport;
+                    this.newMatch.courtId = courtObj.id;
+                    this.newMatch.courtName = courtObj.name;
+                    this.showHostForm = true;
+                },
+
+                syncNewMatchCourtData() {
+                    let sel = this.courtsDatabase.find(x => x.id === this.newMatch.courtId);
+                    if (sel) this.newMatch.courtName = sel.name;
                 },
 
                 adjustFormatLimits() {
@@ -596,18 +984,30 @@
                 },
 
                 executeMatchAllocation() {
-                    let record = {
-                        ...this.newMatch,
-                        id: 'm_' + Date.now(),
+                    let allocationRecord = {
+                        id: 'match_' + Date.now(),
+                        sport: this.newMatch.sport,
+                        courtId: this.newMatch.courtId,
+                        courtName: this.newMatch.courtName,
+                        format: this.newMatch.format,
+                        minElo: this.newMatch.minElo,
+                        title: this.newMatch.title || (this.newMatch.sport + ' Matchup Allocation Block'),
+                        date: this.newMatch.date,
+                        time: this.newMatch.time,
+                        region: this.currentUser.region,
+                        privacy: this.newMatch.privacy,
                         hostId: this.currentUser.id,
                         roster: [this.currentUser.id],
-                        chat: []
+                        playerPositions: { 'me': this.currentUser.positions[this.newMatch.sport.toLowerCase()]?.[0] || 'Any' },
+                        status: 'scheduled',
+                        chat: [],
+                        request: null
                     };
-                    this.matchesList.unshift(record);
+
+                    this.matchesList.unshift(allocationRecord);
                     this.showHostForm = false;
-                    
-                    // Reset hosting fields logic entries
-                    this.newMatch = { sport: 'Football', format: '5v5', title: '', date: '', time: '', location: '', region: 'Lisbon Coast', privacy: 'Public', shareMethod: 'Friends Only', maxPlayers: 10 };
+                    this.currentScreen = 'discover';
+                    alert('New match infrastructure verified and linked up onto operational directories maps arrays layout blocks.');
                 }
             };
         }
