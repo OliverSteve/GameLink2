@@ -6,13 +6,10 @@
     <title>PickupSports Lisbon Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased" x-data="sportsApp()">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm" x-show="currentScreen !== 'auth' && currentScreen !== 'onboarding'" x-cloak>
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm" x-show="currentScreen !== 'auth' && currentScreen !== 'onboarding'">
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-md shadow-indigo-200">PS</div>
@@ -29,7 +26,7 @@
             <div>
                 <button @click="openProfileCustomizer()" class="h-8 border border-indigo-200 bg-indigo-50 px-3 rounded-lg text-xs font-bold text-indigo-700 hover:bg-indigo-100 flex items-center gap-2 shadow-sm">
                     <img :src="currentUser.avatarUrl" class="w-5 h-5 rounded-full object-cover">
-                    <span x-text="currentUser.name.split(' ')[0] || 'My Profile'"></span>
+                    <span x-text="currentUser.name ? currentUser.name.split(' ')[0] : 'My Profile'"></span>
                 </button>
             </div>
         </div>
@@ -47,7 +44,7 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Email or phone</label>
-                    <input type="email" x-model="googleEmail" class="w-full border border-slate-300 text-sm rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <input type="email" x-model="googleEmail" placeholder="player.lisbon@gmail.com" class="w-full border border-slate-300 text-sm rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
@@ -59,13 +56,13 @@
                 </div>
 
                 <div class="flex items-center justify-between pt-4">
-                    <button @click="googleEmail = 'player.lisbon@gmail.com'; loginWithGoogle();" class="text-xs text-indigo-600 font-bold hover:underline">Create account</button>
-                    <button @click="loginWithGoogle()" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm">Next</button>
+                    <button type="button" @click="googleEmail = 'player.lisbon@gmail.com'; loginWithGoogle();" class="text-xs text-indigo-600 font-bold hover:underline">Create account</button>
+                    <button type="button" @click="loginWithGoogle()" class="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all shadow-sm">Next</button>
                 </div>
             </div>
         </div>
 
-        <div x-show="currentScreen === 'onboarding'" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100" x-cloak>
+        <div x-show="currentScreen === 'onboarding'" class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
             <div class="bg-indigo-600 p-5 text-white text-center">
                 <h3 class="text-lg font-bold">Tell us about yourself</h3>
                 <p class="text-indigo-200 text-xs mt-1">Help us find the best games for you</p>
@@ -104,7 +101,7 @@
             </div>
         </div>
 
-        <div x-show="currentScreen === 'discover'" class="space-y-8" x-cloak>
+        <div x-show="currentScreen === 'discover'" class="space-y-8">
             
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div class="flex gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
@@ -144,13 +141,13 @@
                                 <div class="mb-4">
                                     <span class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Players in this match:</span>
                                     <div class="flex flex-wrap gap-1">
-                                        <template x-for="pID in match.roster">
+                                        <template x-for="pID in match.roster" :key="pID">
                                             <div @click="viewProfile(getPlayerDetails(pID))" class="bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded text-[10px] font-semibold text-indigo-700 flex items-center gap-1 cursor-pointer hover:bg-indigo-100 transition-all">
-                                                <span x-text="getPlayerDetails(pID).name.split(' ')[0]"></span>
+                                                <span x-text="getPlayerDetails(pID).name ? getPlayerDetails(pID).name.split(' ')[0] : 'Player'"></span>
                                                 <span x-show="getPlayerDetails(pID).noShows > 0" class="text-rose-600 font-bold text-[9px] bg-rose-50 px-1 rounded border border-rose-200" :title="'Missed ' + getPlayerDetails(pID).noShows + ' games'">⚠️ <span x-text="getPlayerDetails(pID).noShows"></span></span>
                                             </div>
                                         </template>
-                                        <template x-for="i in (match.maxPlayers - match.roster.length)">
+                                        <template x-for="i in Math.max(0, match.maxPlayers - match.roster.length)" :key="i">
                                             <div class="border border-dashed border-slate-200 bg-slate-50 text-slate-400 px-2 py-0.5 rounded text-[10px]">Open Spot</div>
                                         </template>
                                     </div>
@@ -233,7 +230,7 @@
             </div>
         </div>
 
-        <div x-show="currentScreen === 'calendar'" class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm" x-cloak>
+        <div x-show="currentScreen === 'calendar'" class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
             <div class="border-b border-slate-100 pb-4 mb-6">
                 <h2 class="text-xl font-bold text-slate-900">Your Match Schedule</h2>
                 <p class="text-slate-500 text-sm">All upcoming and finished games you are registered for.</p>
@@ -250,7 +247,7 @@
                         <div class="flex items-start gap-4">
                             <div class="bg-indigo-600 text-white font-bold p-3 rounded-xl min-w-[70px] text-center shadow-md shadow-indigo-100">
                                 <span class="block text-[10px] uppercase opacity-75 tracking-wider font-mono">2026</span>
-                                <span class="text-lg block leading-none font-black my-0.5" x-text="match.date.split('-')[2] || '15'"></span>
+                                <span class="text-lg block leading-none font-black my-0.5" x-text="match.date ? match.date.split('-')[2] : '15'"></span>
                                 <span class="block text-[9px] font-medium opacity-90">July</span>
                             </div>
                             <div>
@@ -273,7 +270,7 @@
             </div>
         </div>
 
-        <div x-show="currentScreen === 'messenger'" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-h-[540px]" x-cloak>
+        <div x-show="currentScreen === 'messenger'" class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm min-h-[540px]">
             
             <div class="md:col-span-1 border-r border-slate-200 pr-4 flex flex-col justify-between space-y-4">
                 <div class="space-y-4 overflow-y-auto max-h-[460px]">
@@ -297,7 +294,7 @@
 
                     <div class="space-y-1">
                         <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Friends Ledger</span>
-                        <template x-for="fID in currentUser.friends">
+                        <template x-for="fID in currentUser.friends" :key="fID">
                             <div class="w-full flex items-center justify-between p-2 rounded-xl text-xs hover:bg-slate-50 border border-transparent">
                                 <button @click="activeChannelId = getDirectChannelId(fID)" class="flex items-center gap-2 text-left">
                                     <img :src="getPlayerDetails(fID).avatarUrl" class="w-6 h-6 rounded-full object-cover">
@@ -364,7 +361,7 @@
             </div>
         </div>
 
-        <div x-show="currentScreen === 'leaderboard'" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" x-cloak>
+        <div x-show="currentScreen === 'leaderboard'" class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
             <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white">
                 <div>
                     <h2 class="text-xl font-bold tracking-tight">Lisbon Division Standings</h2>
@@ -380,18 +377,18 @@
             <div class="p-4 bg-slate-50 border-b border-slate-200 grid grid-cols-3 gap-2 text-center text-xs">
                 <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm flex flex-col justify-center items-center order-2 border-indigo-300 ring-2 ring-indigo-50">
                     <span class="text-2xl">🥇</span>
-                    <span class="font-black text-slate-900 block mt-1" x-text="sortedLadder()[0]?.name || 'No user'"></span>
-                    <span class="text-[10px] text-indigo-600 font-extrabold font-mono" x-text="'Elo: ' + (sortedLadder()[0]?.rating || 0)"></span>
+                    <span class="font-black text-slate-900 block mt-1" x-text="sortedLadder()[0] ? sortedLadder()[0].name : 'No user'"></span>
+                    <span class="text-[10px] text-indigo-600 font-extrabold font-mono" x-text="'Elo: ' + (sortedLadder()[0] ? sortedLadder()[0].rating : 0)"></span>
                 </div>
                 <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm flex flex-col justify-center items-center order-1 mt-3">
                     <span class="text-xl">🥈</span>
-                    <span class="font-bold text-slate-800 block" x-text="sortedLadder()[1]?.name || 'No user'"></span>
-                    <span class="text-[10px] text-slate-500 font-bold font-mono" x-text="'Elo: ' + (sortedLadder()[1]?.rating || 0)"></span>
+                    <span class="font-bold text-slate-800 block" x-text="sortedLadder()[1] ? sortedLadder()[1].name : 'No user'"></span>
+                    <span class="text-[10px] text-slate-500 font-bold font-mono" x-text="'Elo: ' + (sortedLadder()[1] ? sortedLadder()[1].rating : 0)"></span>
                 </div>
                 <div class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm flex flex-col justify-center items-center order-3 mt-4">
                     <span class="text-lg">🥉</span>
-                    <span class="font-bold text-slate-800 block" x-text="sortedLadder()[2]?.name || 'No user'"></span>
-                    <span class="text-[10px] text-slate-500 font-bold font-mono" x-text="'Elo: ' + (sortedLadder()[2]?.rating || 0)"></span>
+                    <span class="font-bold text-slate-800 block" x-text="sortedLadder()[2] ? sortedLadder()[2].name : 'No user'"></span>
+                    <span class="text-[10px] text-slate-500 font-bold font-mono" x-text="'Elo: ' + (sortedLadder()[2] ? sortedLadder()[2].rating : 0)"></span>
                 </div>
             </div>
 
@@ -438,7 +435,7 @@
         </div>
     </main>
 
-    <div x-show="showProfileCustomizer" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
+    <div x-show="showProfileCustomizer" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 text-xs" @click.outside="showProfileCustomizer = false">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-sm font-black text-slate-900">Edit Profile Customization</h3>
@@ -472,7 +469,7 @@
         </div>
     </div>
 
-    <div x-show="selectedCourtModal !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
+    <div x-show="selectedCourtModal !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 text-xs" @click.outside="selectedCourtModal = null">
             <div class="h-40 bg-slate-300 bg-cover bg-center" :style="'background-image: url(' + selectedCourtModal?.pic + ')'"></div>
             <div class="p-5 space-y-4">
@@ -506,17 +503,16 @@
         </div>
     </div>
 
-    <div x-show="ratingMatchTarget !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
+    <div x-show="ratingMatchTarget !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 text-xs" @click.outside="ratingMatchTarget = null">
             <h3 class="text-sm font-black text-slate-900 mb-2">Rate Teammates & Opponents</h3>
             <p class="text-slate-500 mb-4">Give your peers feedback after your game on <span class="font-bold text-indigo-600" x-text="ratingMatchTarget?.title"></span>.</p>
             
             <div class="space-y-4 max-h-60 overflow-y-auto pr-1">
-                <template x-for="pID in ratingMatchTarget?.roster.filter(id => id !== currentUser.id)">
+                <template x-for="pID in (ratingMatchTarget ? ratingMatchTarget.roster.filter(id => id !== currentUser.id) : [])" :key="pID">
                     <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl flex flex-col gap-2">
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-slate-800" x-text="getPlayerDetails(pID).name"></span>
-                            
                             <button @click="flagAsNoShow(pID)" class="text-[9px] bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded font-bold hover:bg-rose-100">Flag as No-Show ⚠️</button>
                         </div>
                         <div class="flex items-center gap-2">
@@ -535,13 +531,13 @@
         </div>
     </div>
 
-    <div x-show="addPeopleTargetGroup !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
+    <div x-show="addPeopleTargetGroup !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-xs w-full p-5 shadow-2xl border border-slate-200 text-xs" @click.outside="addPeopleTargetGroup = null">
             <h4 class="text-sm font-black text-slate-800 mb-1">Add Friends to Channel</h4>
             <p class="text-slate-400 mb-3" x-text="'Channel Ref: ' + addPeopleTargetGroup?.name"></p>
             
             <div class="space-y-1 max-h-40 overflow-y-auto mb-4">
-                <template x-for="fID in currentUser.friends">
+                <template x-for="fID in currentUser.friends" :key="fID">
                     <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
                         <span class="font-bold text-slate-700" x-text="getPlayerDetails(fID).name"></span>
                         <button @click="addFriendToGroupChannel(fID)" class="bg-indigo-600 text-white font-bold px-2 py-0.5 rounded text-[10px] hover:bg-indigo-700">Add</button>
@@ -552,7 +548,7 @@
         </div>
     </div>
 
-    <div x-show="selectedMatch !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-40" x-cloak>
+    <div x-show="selectedMatch !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-40">
         <div class="bg-white rounded-2xl max-w-lg w-full h-[580px] overflow-hidden shadow-2xl border border-slate-200 flex flex-col" @click.outside="selectedMatch = null">
             <div class="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
                 <div>
@@ -571,477 +567,5 @@
 
             <div class="flex-1 overflow-y-auto p-4 min-h-0 bg-slate-50/50 text-xs">
                 <div x-show="matchViewTab === 'roster'" class="space-y-2">
-                    <template x-for="(pID, idx) in selectedMatch?.roster || []">
+                    <template x-for="(pID, idx) in (selectedMatch ? selectedMatch.roster : [])" :key="pID">
                         <div class="bg-white p-3 rounded-xl border border-slate-100 flex justify-between items-center shadow-sm">
-                            <div class="flex items-center gap-3">
-                                <div class="w-6 h-6 bg-indigo-50 rounded font-black text-center flex items-center justify-center text-indigo-700" x-text="idx + 1"></div>
-                                <div>
-                                    <button @click="viewProfile(getPlayerDetails(pID))" class="font-bold text-slate-800 hover:underline text-left block" x-text="getPlayerDetails(pID).name"></button>
-                                    <span class="text-[10px] text-slate-400 block -mt-0.5" x-text="'Position: ' + (selectedMatch?.playerPositions?.[pID] || 'Any Position')"></span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-1.5">
-                                <span x-show="selectedMatch?.hostId === pID" class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[9px] border border-amber-200 uppercase">Host</span>
-                                <template x-if="pID === currentUser.id">
-                                    <button type="button" @click="resignPositionAssignment(selectedMatch.id)" class="text-rose-500 font-bold hover:underline text-[10px]">Leave</button>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <div x-show="matchViewTab === 'chat'" class="space-y-2 flex flex-col justify-end min-h-full">
-                    <div x-show="selectedMatch?.chat.length === 0" class="text-center text-slate-400 my-auto">No messages in this match yet.</div>
-                    <template x-for="cMsg in selectedMatch?.chat || []">
-                        <div :class="cMsg.senderId === currentUser.id ? 'bg-indigo-600 text-white self-end rounded-tr-none' : 'bg-white text-slate-800 border border-slate-200 self-start rounded-tl-none'" class="max-w-[80%] rounded-xl p-2 shadow-sm">
-                            <span x-show="cMsg.senderId !== currentUser.id" class="block font-black text-indigo-600 text-[10px] mb-0.5" x-text="cMsg.senderName"></span>
-                            
-                            <p class="font-medium">
-                                <template x-if="cMsg.text.includes('http')">
-                                    <a :href="cMsg.text" target="_blank" class="underline text-yellow-500 font-bold" x-text="cMsg.text"></a>
-                                </template>
-                                <template x-if="!cMsg.text.includes('http')">
-                                    <span x-text="cMsg.text"></span>
-                                </template>
-                            </p>
-                            <span class="block text-[8px] opacity-60 text-right mt-1" x-text="cMsg.time"></span>
-                        </div>
-                    </template>
-                </div>
-
-                <div x-show="matchViewTab === 'share'" class="space-y-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                    <div>
-                        <span class="block font-bold text-slate-700 mb-1">Game Custom Deep Link URL</span>
-                        <div class="flex gap-1.5">
-                            <input type="text" readonly :value="'https://pickupsports.pt/match/join?id=' + selectedMatch?.id" class="bg-slate-100 border border-slate-200 font-mono text-[10px] p-2 rounded-lg flex-1">
-                            <button type="button" @click="navigator.clipboard.writeText('https://pickupsports.pt/match/join?id=' + selectedMatch?.id); alert('Link copied to clipboard');" class="bg-slate-800 text-white px-3 font-bold rounded-lg hover:bg-slate-900">Copy</button>
-                        </div>
-                    </div>
-                    <div class="border-t border-slate-100 pt-3 space-y-2">
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" @click="routeMatchToAppChats(selectedMatch.id)" class="bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold p-2.5 rounded-xl hover:bg-indigo-100 text-center">Send to Group Chats</button>
-                            <button type="button" @click="routeMatchToDirectFriendChat(selectedMatch.id)" class="bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold p-2.5 rounded-xl hover:bg-emerald-100 text-center">Send to Friends</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-3 bg-white border-t border-slate-200 shrink-0 flex items-center gap-2">
-                <template x-if="matchViewTab === 'chat'">
-                    <div class="flex w-full gap-2">
-                        <input type="text" x-model="matchChatInput" @keydown.enter="sendMatchChatMessage()" placeholder="Type a message or share a link..." class="flex-1 border border-slate-200 text-xs rounded-xl px-3 py-2">
-                        <button @click="sendMatchChatMessage()" class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-xl text-xs">Send</button>
-                    </div>
-                </template>
-                <template x-if="matchViewTab === 'roster'">
-                    <div class="w-full flex flex-col gap-2">
-                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5" x-show="!selectedMatch?.roster.includes(currentUser.id) && currentUser.rating >= selectedMatch?.minElo">
-                            <span class="block font-bold text-slate-600 text-[10px] mb-1">Choose your Field Position:</span>
-                            <select x-model="selectedPositionToClaim" class="w-full bg-white border border-slate-200 p-1.5 rounded-lg text-xs font-semibold text-slate-700">
-                                <template x-for="pos in (selectedMatch?.sport === 'Football' ? ['Striker', 'Winger', 'Midfielder', 'Defender', 'Goalkeeper'] : ['Setter', 'Outside Hitter', 'Opposite Hitter', 'Middle Blocker', 'Libero'])">
-                                    <option :value="pos" x-text="pos"></option>
-                                </template>
-                            </select>
-                        </div>
-                        
-                        <div class="flex gap-2">
-                            <template x-if="selectedMatch?.hostId === currentUser.id">
-                                <button type="button" @click="cancelEntireMatch(selectedMatch.id)" class="w-full py-2 bg-rose-600 text-white font-black rounded-xl text-center text-xs tracking-wide">Cancel and Dissolve Scheduled Match Event</button>
-                            </template>
-                            <template x-if="selectedMatch?.hostId !== currentUser.id">
-                                <button @click="executeJoinPipeline(selectedMatch)" 
-                                        :disabled="!selectedMatch?.roster.includes(currentUser.id) && selectedMatch?.roster.length >= selectedMatch?.maxPlayers"
-                                        :class="selectedMatch?.roster.includes(currentUser.id) ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-indigo-600 text-white'"
-                                        class="w-full py-2.5 rounded-xl font-black text-center border text-xs"
-                                        x-text="selectedMatch?.roster.includes(currentUser.id) ? 'Leave Match' : (currentUser.rating < selectedMatch?.minElo ? '🔒 Submit Request' : 'Join Match')"></button>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-    </div>
-
-    <div x-show="selectedProfile !== null" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
-        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200" @click.outside="selectedProfile = null">
-            <div class="bg-gradient-to-r from-indigo-600 to-indigo-800 p-6 text-white relative">
-                <button @click="selectedProfile = null" class="absolute top-4 right-4 text-white/70 hover:text-white font-bold text-xs">✕</button>
-                <img :src="selectedProfile?.avatarUrl" class="h-14 w-14 rounded-xl border border-white/20 mb-2 object-cover">
-                <h3 class="text-xl font-bold" x-text="selectedProfile?.name"></h3>
-                <p class="text-indigo-200 text-xs font-mono">📍 Area: <span x-text="selectedProfile?.residence"></span></p>
-            </div>
-            <div class="p-6 space-y-4 text-xs">
-                <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium">
-                    <div><span class="text-slate-400 block text-[9px]">Experience Level</span><span class="text-slate-800 font-bold" x-text="selectedProfile?.experience || '1-3 Years'"></span></div>
-                    <div><span class="text-slate-400 block text-[9px]">Reliability Index</span><span class="text-rose-600 font-bold" x-text="selectedProfile?.noShows > 0 ? selectedProfile?.noShows + ' Missed Games ⚠️' : 'Excellent (0 Missing)'"></span></div>
-                </div>
-
-                <div class="grid grid-cols-3 gap-2 bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-xl text-center">
-                    <div><span class="block text-[9px] uppercase font-bold text-indigo-400">Elo Rank</span><span class="text-base font-black text-indigo-900" x-text="selectedProfile?.rating"></span></div>
-                    <div><span class="block text-[9px] uppercase font-bold text-indigo-400">Wins</span><span class="text-base font-black text-emerald-600" x-text="selectedProfile?.wins"></span></div>
-                    <div><span class="block text-[9px] uppercase font-bold text-indigo-400">Losses</span><span class="text-base font-black text-rose-500" x-text="selectedProfile?.losses"></span></div>
-                </div>
-
-                <button x-show="selectedProfile?.id !== currentUser.id"
-                        @click="toggleFriendNetwork(selectedProfile.id)"
-                        :class="currentUser.friends.includes(selectedProfile?.id) ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-indigo-600 text-white hover:bg-indigo-700'"
-                        class="w-full py-2.5 rounded-xl font-bold border border-transparent shadow-sm flex items-center justify-center gap-1.5 text-xs">
-                    <span x-text="currentUser.friends.includes(selectedProfile?.id) ? '✓ Friends Linked' : '🔗 Add as Friend'"></span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div x-show="showHostForm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-40" x-cloak>
-        <form @submit.prevent="executeMatchAllocation()" class="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 flex flex-col" @click.outside="showHostForm = false">
-            <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
-                <h3 class="font-black text-slate-800 text-sm">Create a New Match Matchroom</h3>
-                <button type="button" @click="showHostForm = false" class="text-slate-400 font-bold">✕</button>
-            </div>
-            
-            <div class="p-5 space-y-4 flex-1 overflow-y-auto text-xs">
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Select Sport Type</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" @click="newMatch.sport = 'Football'; newMatch.format = '5v5'; newMatch.maxPlayers = 10; syncNewMatchCourtData();" :class="newMatch.sport === 'Football' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2.5 border rounded-xl font-bold text-center">Football</button>
-                        <button type="button" @click="newMatch.sport = 'Volleyball'; newMatch.format = '2v2 Beach'; newMatch.maxPlayers = 4; syncNewMatchCourtData();" :class="newMatch.sport === 'Volleyball' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2.5 border rounded-xl font-bold text-center">Volleyball</button>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Select Location Court (Choose from list)</label>
-                    <select x-model="newMatch.courtId" @change="syncNewMatchCourtData()" class="w-full border border-slate-200 p-2.5 rounded-xl bg-white font-semibold text-slate-700">
-                        <template x-for="c in courtsDatabase.filter(x => x.sport === newMatch.sport)">
-                            <option :value="c.id" x-text="c.name"></option>
-                        </template>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-slate-600 font-bold mb-1">Baseline Required Min Elo</label>
-                        <input type="number" required x-model.number="newMatch.minElo" class="w-full border border-slate-200 p-2 rounded-xl text-center font-bold font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-slate-600 font-bold mb-1">Booking Cost/Fee (€ Total)</label>
-                        <input type="number" required x-model.number="newMatch.price" class="w-full border border-slate-200 p-2 rounded-xl text-center font-bold font-mono">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Match Title Header Text</label>
-                    <input type="text" required placeholder="e.g. Wednesday Night Lights Friendly" x-model="newMatch.title" class="w-full border border-slate-200 p-2.5 rounded-xl">
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-slate-600 font-bold mb-1">Target Date</label>
-                        <input type="date" required x-model="newMatch.date" class="w-full border border-slate-200 p-2 rounded-xl">
-                    </div>
-                    <div>
-                        <label class="block text-slate-600 font-bold mb-1">Time Slot Block</label>
-                        <input type="time" required x-model="newMatch.time" class="w-full border border-slate-200 p-2 rounded-xl">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Privacy Governance Layer Access Rules</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" @click="newMatch.privacy = 'Public'" :class="newMatch.privacy === 'Public' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2 border rounded-xl font-bold text-center">Public Listing</button>
-                        <button type="button" @click="newMatch.privacy = 'Private'" :class="newMatch.privacy === 'Private' ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200'" class="p-2 border rounded-xl font-bold text-center">Private (Invite Link Only)</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-slate-50 border-t border-slate-100 text-right shrink-0">
-                <button type="submit" class="w-full bg-indigo-600 text-white font-black py-2.5 rounded-xl shadow-md">Deploy Game Matchroom</button>
-            </div>
-        </form>
-    </div>
-
-    <div x-show="showGroupCreator" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" x-cloak>
-        <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-xs" @click.outside="showGroupCreator = false">
-            <h4 class="text-sm font-black text-slate-800 mb-3">Create New Custom Group Chat Channel</h4>
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-slate-600 font-bold mb-1">Group Channel Name</label>
-                    <input type="text" x-model="newGroupName" placeholder="e.g. Lisbon Weekend Striker Club" class="w-full border border-slate-200 p-2 rounded-lg">
-                </div>
-                <button type="button" @click="createCustomChatGroup()" class="w-full bg-indigo-600 text-white font-bold p-2.5 rounded-lg">Generate Group Channel</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        function sportsApp() {
-            return {
-                currentScreen: 'auth',
-                selectedSportTab: 'All',
-                ladderSportTab: 'Football',
-                selectedProfile: null,
-                selectedMatch: null,
-                selectedCourtModal: null,
-                ratingMatchTarget: null,
-                addPeopleTargetGroup: null,
-                matchViewTab: 'roster',
-                matchChatInput: '',
-                messengerInput: '',
-                playerSearchQuery: '',
-                googleEmail: '',
-                showHostForm: false,
-                showGroupCreator: false,
-                showProfileCustomizer: false,
-                profileCustomAvatar: '',
-                newGroupName: '',
-                activeChannelId: 'g1',
-                selectedPositionToClaim: 'Striker',
-
-                avatarPresets: [
-                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-                    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-                    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'
-                ],
-
-                currentUser: {
-                    id: 'me',
-                    name: 'Guest Player',
-                    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-                    sports: [],
-                    experience: '',
-                    positions: { football: [], volleyball: [] },
-                    residence: 'Lisbon Center',
-                    rating: 1200,
-                    wins: 15,
-                    losses: 7,
-                    noShows: 0,
-                    avgRating: 5.0,
-                    friends: ['p1', 'p2']
-                },
-
-                newMatch: {
-                    sport: 'Football',
-                    courtId: 'c1',
-                    courtName: 'AirFut Loures Complex',
-                    format: '5v5',
-                    minElo: 1100,
-                    price: 5,
-                    title: '',
-                    date: '2026-07-22',
-                    time: '19:00',
-                    privacy: 'Public',
-                    maxPlayers: 10
-                },
-
-                courtsDatabase: [
-                    { id: 'c1', name: 'AirFut Loures Complex', sport: 'Football', address: 'Estrada do Paço do Lumiar, Loures', condition: 'Indoor Premium Synthetic', rating: '4.7', amenities: ['Showers', 'Bar', 'Parking'], website: 'https://www.airfut.com', pic: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=400&q=80', schedule: { '17:00': 'Booked', '18:00': 'Available', '19:00': 'Available', '20:00': 'Booked' } },
-                    { id: 'c2', name: 'Urban Soccer Monsanto Arena', sport: 'Football', address: 'Parque de Monsanto, Lisbon', condition: 'Outdoor 3G Turf Cage', rating: '4.5', amenities: ['Locker Rooms', 'Cafe', 'Lights'], website: 'https://www.urbansoccer.pt', pic: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?auto=format&fit=crop&w=400&q=80', schedule: { '17:00': 'Available', '18:00': 'Booked', '19:00': 'Available', '20:00': 'Available' } },
-                    { id: 'c3', name: 'Complexo São Domingos de Benfica', sport: 'Football', address: 'Rua Maria Brown, Lisbon', condition: 'Pro Synthetic Grass Field', rating: '4.4', amenities: ['Grandstand', 'Water Stations'], website: 'https://www.jf-sdomingosbenfica.pt', pic: 'https://images.unsplash.com/photo-1431324155629-1a6edd1d1315?auto=format&fit=crop&w=400&q=80', schedule: { '17:00': 'Booked', '18:00': 'Booked', '19:00': 'Available', '20:00': 'Available' } },
-                    { id: 'c4', name: 'Praia de Carcavelos Nets', sport: 'Volleyball', address: 'Carcavelos Beachfront, Cascais', condition: 'Natural Beach Sand Nets', rating: '4.6', amenities: ['Beach Bars', 'Sunset Views'], website: 'https://www.cm-cascais.pt', pic: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=400&q=80', schedule: { '17:00': 'Available', '18:00': 'Available', '19:00': 'Booked', '20:00': 'Available' } }
-                ],
-
-                playersList: [
-                    { id: 'p1', name: 'Alex Silva', avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=100&q=80', sports: ['Football', 'Volleyball'], experience: '3 to 6 years', residence: 'Cascais', rating: 1450, wins: 42, losses: 12, noShows: 0, avgRating: 4.8 },
-                    { id: 'p2', name: 'Sofia Santos', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80', sports: ['Volleyball'], experience: '1 to 3 years', residence: 'Estoril', rating: 1210, wins: 24, losses: 15, noShows: 1, avgRating: 4.5 },
-                    { id: 'p3', name: 'Diogo Costa', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80', sports: ['Football'], experience: 'More than 6 years', residence: 'Benfica', rating: 1680, wins: 88, losses: 22, noShows: 0, avgRating: 4.9 },
-                    { id: 'p4', name: 'Mariana Vaz', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80', sports: ['Football', 'Volleyball'], experience: 'Less than 1 year', residence: 'Sintra', rating: 980, wins: 5, losses: 14, noShows: 3, avgRating: 3.8 }
-                ],
-
-                matchesList: [
-                    { id: 'm1', sport: 'Football', courtId: 'c1', courtName: 'AirFut Loures Complex', format: '5v5', minElo: 1300, price: 7, title: 'Champions League Turf Battle', date: '2026-07-14', time: '20:00', privacy: 'Public', hostId: 'p3', roster: ['p3', 'p1', 'me'], maxPlayers: 10, playerPositions: { 'p3': 'Striker', 'p1': 'Midfielder', 'me': 'Defender' }, status: 'scheduled', chat: [], request: null },
-                    { id: 'm2', sport: 'Volleyball', courtId: 'c4', courtName: 'Praia de Carcavelos Nets', format: '2v2 Beach', minElo: 1100, price: 0, title: 'Sunset Beach Duos Match', date: '2026-07-16', time: '18:30', privacy: 'Private', hostId: 'p1', roster: ['p1', 'p2'], maxPlayers: 4, playerPositions: { 'p1': 'Setter', 'p2': 'Outside Hitter' }, status: 'scheduled', chat: [], request: null }
-                ],
-
-                chatChannels: [
-                    { id: 'g1', name: 'Global Lisbon Pickups', messages: [{ id: '1', senderId: 'p3', senderName: 'Diogo Costa', text: 'Anyone up for 5v5 game tonight?', time: '14:20' }] },
-                    { id: 'g2', name: 'Cascais Beach Volleyball Arena', messages: [] }
-                ],
-
-                loginWithGoogle() {
-                    if(this.googleEmail) {
-                        this.currentUser.name = this.googleEmail.split('@')[0];
-                    } else {
-                        this.currentUser.name = 'Google User';
-                    }
-                    this.currentScreen = 'onboarding';
-                },
-
-                toggleUserSport(sport) {
-                    if (this.currentUser.sports.includes(sport)) {
-                        this.currentUser.sports = this.currentUser.sports.filter(s => s !== sport);
-                    } else {
-                        this.currentUser.sports.push(sport);
-                    }
-                },
-
-                completeOnboarding() {
-                    this.playersList.unshift(JSON.parse(JSON.stringify(this.currentUser)));
-                    this.currentScreen = 'discover';
-                },
-
-                filteredMatches() {
-                    return this.matchesList.filter(m => {
-                        if (m.privacy === 'Private' && !m.roster.includes(this.currentUser.id)) return false;
-                        if (this.selectedSportTab === 'All') return true;
-                        return m.sport === this.selectedSportTab;
-                    });
-                },
-
-                joinedMatches() {
-                    return this.matchesList.filter(m => m.roster.includes(this.currentUser.id));
-                },
-
-                filteredCourts() {
-                    if (this.selectedSportTab === 'All') return this.courtsDatabase;
-                    return this.courtsDatabase.filter(c => c.sport === this.selectedSportTab);
-                },
-
-                sortedLadder() {
-                    return [...this.playersList]
-                        .filter(p => p.sports.includes(this.ladderSportTab))
-                        .sort((a, b) => b.rating - a.rating);
-                },
-
-                getPlayerDetails(id) {
-                    if (id === this.currentUser.id) return this.currentUser;
-                    return this.playersList.find(p => p.id === id) || { name: 'Player', rating: 1200, noShows: 0, avatarUrl: this.avatarPresets[0] };
-                },
-
-                viewProfile(pObj) {
-                    this.selectedProfile = pObj;
-                },
-
-                openProfileCustomizer() {
-                    this.profileCustomAvatar = this.currentUser.avatarUrl;
-                    this.showProfileCustomizer = true;
-                },
-
-                saveProfileCustomization() {
-                    this.currentUser.avatarUrl = this.profileCustomAvatar;
-                    this.showProfileCustomizer = false;
-                    alert('Profile updated successfully!');
-                },
-
-                openCourtDetailsModal(courtObj) {
-                    this.selectedCourtModal = courtObj;
-                },
-
-                openRatingModal(matchObj) {
-                    this.ratingMatchTarget = matchObj;
-                },
-
-                submitScoreRating(playerID, score) {
-                    let p = this.playersList.find(x => x.id === playerID);
-                    if(p) {
-                        p.avgRating = (p.avgRating + score) / 2;
-                        alert('Submitted ' + score + ' stars for ' + p.name);
-                    }
-                },
-
-                flagAsNoShow(playerID) {
-                    let p = this.playersList.find(x => x.id === playerID);
-                    if(p) {
-                        p.noShows = (p.noShows || 0) + 1;
-                        alert(p.name + ' marked as Late/No-Show. Attendance flag added.');
-                    }
-                },
-
-                searchedPlayers() {
-                    if (!this.playerSearchQuery.trim()) return [];
-                    let q = this.playerSearchQuery.toLowerCase();
-                    return this.playersList.filter(p => p.name.toLowerCase().includes(q) || p.residence.toLowerCase().includes(q));
-                },
-
-                openAddPeopleModal(channelObj) {
-                    this.addPeopleTargetGroup = channelObj;
-                },
-
-                addFriendToGroupChannel(friendID) {
-                    let friend = this.getPlayerDetails(friendID);
-                    if (this.addPeopleTargetGroup) {
-                        this.addPeopleTargetGroup.messages.push({
-                            id: 'sys_' + Date.now(),
-                            senderId: 'system',
-                            senderName: 'System',
-                            text: friend.name + ' was added to the group chat.',
-                            time: 'Now'
-                        });
-                        alert(friend.name + ' added to group successfully!');
-                    }
-                },
-
-                toggleFriendNetwork(id) {
-                    if (this.currentUser.friends.includes(id)) {
-                        this.currentUser.friends = this.currentUser.friends.filter(fId => fId !== id);
-                    } else {
-                        this.currentUser.friends.push(id);
-                    }
-                },
-
-                openMatchRoom(matchObj, tab = 'roster') {
-                    this.selectedMatch = matchObj;
-                    this.matchViewTab = tab;
-                    this.selectedPositionToClaim = matchObj.sport === 'Football' ? 'Striker' : 'Setter';
-                },
-
-                hasPendingRequest(matchId) {
-                    let m = this.matchesList.find(x => x.id === matchId);
-                    return m && m.request !== null;
-                },
-
-                executeJoinPipeline(match) {
-                    let target = this.matchesList.find(m => m.id === match.id);
-                    if (!target) return;
-
-                    if (target.roster.includes(this.currentUser.id)) {
-                        this.resignPositionAssignment(target.id);
-                        return;
-                    }
-
-                    if (this.currentUser.rating < target.minElo) {
-                        if (target.request) {
-                            alert('A request is already pending for this match.');
-                            return;
-                        }
-                        target.request = {
-                            applicantId: this.currentUser.id,
-                            position: this.selectedPositionToClaim,
-                            votersAccepted: []
-                        };
-                        alert('Your Elo score is lower than min requirement. Approval request submitted to active players.');
-                        return;
-                    }
-
-                    if (target.roster.length < target.maxPlayers) {
-                        target.roster.push(this.currentUser.id);
-                        target.playerPositions[this.currentUser.id] = this.selectedPositionToClaim;
-                        if (this.selectedMatch && this.selectedMatch.id === target.id) this.selectedMatch = target;
-                    }
-                },
-
-                castValidationVote(matchId) {
-                    let m = this.matchesList.find(x => x.id === matchId);
-                    if (!m || !m.request) return;
-
-                    if (!m.request.votersAccepted.includes(this.currentUser.id)) {
-                        m.request.votersAccepted.push(this.currentUser.id);
-                    }
-
-                    if (m.request.votersAccepted.length >= m.roster.length) {
-                        m.roster.push(m.request.applicantId);
-                        m.playerPositions[m.request.applicantId] = m.request.position;
-                        alert('All players accepted! Joining game now.');
-                        m.request = null;
-                    }
-                    if (this.selectedMatch && this.selectedMatch.id === matchId) this.selectedMatch = m;
-                },
-
-                resignPositionAssignment(matchId) {
-                    let target = this.matchesList.find(m => m.id === matchId);
-                    if (!target) return;
-
-                    target.roster = target.roster.filter(id => id !== this.currentUser.id);
-                    delete target.playerPositions[this.currentUser.id];
-
-                    if (target.request && target.request.applicantId === this.currentUser.id) target.request = null;
-                    if (this.selectedMatch && this.selectedMatch.id === matchId) this.selectedMatch = target
