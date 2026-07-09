@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameLink</title>
+<style>
+  :root{
+    --ink:#0F1A14;
+    --surface:#16241C;
+    --surface-2:#1D2E23;
+    --line: rgba(241,237,228,0.09);
+    --chalk:#F1EDE4;
+    --muted:#8FA396;
+    --grass:#4C9A5A;
+    --grass-bright:#5FBE6E;
+    --amber:#E8A23D;
+    --azulejo:#3D84A8;
+    --danger:#C0564A;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#0a0f0c; }
+  body{ display:flex; justify-content:center; padding:20px 10px; min-height:100vh; }
+  .gl-root{
+    background:var(--ink);
+    color:var(--chalk);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    display:flex; flex-direction:column;
+    width:100%; max-width:430px;
+    height:700px;
+    border-radius:20px;
+    overflow:hidden;
+    position:relative;
+    box-shadow: 0 0 0 1px var(--line), 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .gl-display{
+    font-family: 'Arial Narrow', 'Helvetica Neue', sans-serif;
+    font-weight:800;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+  }
+  .gl-scroll{ flex:1; overflow-y:auto; padding: 16px 16px 90px 16px; }
+  .gl-topbar{
+    padding:18px 16px 14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    background: linear-gradient(180deg, rgba(76,154,90,0.10), transparent);
+    flex-shrink:0;
+  }
+  .gl-logo{ font-size:20px; letter-spacing:0.04em; }
+  .gl-logo span{ color:var(--grass-bright); }
+  .gl-chip{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:6px 12px; border-radius:100px;
+    font-size:12px; font-weight:600;
+    border:1px solid var(--line);
+    background:var(--surface);
+    color:var(--muted);
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all .15s ease;
+    font-family:inherit;
+  }
+  .gl-chip.active{ background:var(--grass); color:#0F1A14; border-color:var(--grass); }
+  .gl-chip-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px; }
+  .gl-chip-row::-webkit-scrollbar{ display:none; }
+  .gl-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px;
+    margin-bottom:12px;
+    cursor:pointer;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .gl-card:hover{ border-color:rgba(95,190,110,0.4); transform:translateY(-1px); }
+  .gl-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    background:var(--grass);
+    color:#0F1A14;
+    border:none;
+    border-radius:12px;
+    padding:13px 16px;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    transition: background .15s ease;
+    font-family:inherit;
+  }
+  .gl-btn:hover{ background:var(--grass-bright); }
+  .gl-btn:disabled{ background:var(--line); color:var(--muted); cursor:not-allowed; }
+  .gl-btn-outline{ background:transparent; border:1px solid var(--line); color:var(--chalk); }
+  .gl-btn-outline:hover{ background:var(--surface-2); }
+  .gl-btn-amber{ background:var(--amber); }
+  .gl-btn-amber:hover{ background:#F0B65C; }
+  .gl-input, .gl-select{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:14px;
+    outline:none;
+    font-family:inherit;
+  }
+  .gl-input:focus, .gl-select:focus{ border-color:var(--grass); }
+  .gl-label{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:7px; display:block; }
+  .gl-bottomnav{
+    position:absolute; bottom:0; left:0; right:0;
+    background:rgba(22,36,28,0.92);
+    backdrop-filter: blur(8px);
+    border-top:1px solid var(--line);
+    display:flex; justify-content:space-around;
+    padding:10px 6px 12px 6px;
+    z-index: 30;
+  }
+  .gl-navitem{
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--muted); background:none; border:none; cursor:pointer;
+    font-size:10px; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;
+    padding:4px 10px; font-family:inherit;
+  }
+  .gl-navitem.active{ color:var(--grass-bright); }
+  .gl-slot{
+    width:38px; height:38px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700;
+    border:1.5px dashed var(--line);
+    color:var(--muted);
+    flex-shrink:0;
+    cursor: pointer;
+  }
+  .gl-slot.filled{ border-style:solid; border-color:var(--grass); background:rgba(76,154,90,0.18); color:var(--chalk); }
+  .gl-slot.gk{ border-radius:50%; border-color:var(--amber); }
+  .gl-slot.gk.filled{ background:rgba(232,162,61,0.2); border-color:var(--amber); }
+  .gl-tag{
+    font-size:11px; font-weight:700; padding:4px 9px; border-radius:100px;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .gl-tag.chill{ background:rgba(61,132,168,0.18); color:#7BB8D9; }
+  .gl-tag.competitive{ background:rgba(192,86,74,0.2); color:#E08A7D; }
+  .gl-tag.drills{ background:rgba(232,162,61,0.18); color:var(--amber); }
+  .gl-tag.gk-tag{ background:rgba(232,162,61,0.18); color:var(--amber); }
+  .gl-tag.private-tag{ background:rgba(192,86,74,0.2); color:var(--danger); }
+  .gl-toast{
+    position:absolute; bottom:88px; left:16px; right:16px;
+    background:var(--surface-2); border:1px solid var(--grass);
+    padding:12px 14px; border-radius:12px; font-size:13px;
+    display:flex; align-items:center; gap:8px;
+    animation: gl-rise .25s ease;
+    z-index:100;
+  }
+  @keyframes gl-rise{ from{ opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .gl-modal-backdrop{
+    position:absolute; inset:0; background:rgba(0,0,0,0.65);
+    display:flex; align-items:flex-end; z-index:40;
+  }
+  .gl-modal{
+    background:var(--ink); border-top:1px solid var(--line);
+    border-radius:20px 20px 0 0; width:100%; max-height:85%; overflow-y:auto;
+    padding:20px 16px 28px 16px;
+    animation: gl-slideup .2s ease;
+  }
+  @keyframes gl-slideup{ from{ transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+  .gl-progressbar{ height:5px; background:var(--surface-2); border-radius:100px; overflow:hidden; }
+  .gl-progressfill{ height:100%; background:var(--grass); transition:width .3s ease; }
+  .gl-row{ display:flex; gap:10px; }
+  .gl-col{ flex:1; }
+  
+  /* Tabs styles for chat & details */
+  .gl-tabs-header{ display: flex; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  .gl-tab-btn{ flex: 1; text-align: center; background: none; border: none; color: var(--muted); padding: 10px; font-weight: 700; font-size: 13px; cursor: pointer; text-transform: uppercase; }
+  .gl-tab-btn.active{ color: var(--grass-bright); border-bottom: 2px solid var(--grass-bright); }
+  
+  /* Chat styles */
+  .gl-chat-box{ display: flex; flex-direction: column; height: 240px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .gl-chat-messages{ flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .gl-chat-msg{ font-size: 13px; padding: 8px 12px; border-radius: 10px; max-width: 80%; }
+  .gl-chat-msg.me{ background: var(--grass); color: var(--ink); align-self: flex-end; }
+  .gl-chat-msg.other{ background: var(--surface-2); color: var(--chalk); align-self: flex-start; }
+  .gl-chat-input-row{ display: flex; border-top: 1px solid var(--line); background: var(--ink); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ------------------------------------------------------------------ */
+/* Icons                                                             */
+/* ------------------------------------------------------------------ */
+const ICON_PATHS = {
+  home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+  trophy: '<path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5H4a3 3 0 0 0 3 4"/><path d="M17 5h3a3 3 0 0 1-3 4"/><path d="M12 13v4"/><path d="M8 21h8"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  mapPin: '<path d="M12 22s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.3"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3-5 7-5s7 1.7 7 5"/><circle cx="17" cy="9.5" r="2.3"/><path d="M16.5 15c2.6 0 4.5 1.6 4.5 4.5"/>',
+  check: '<polyline points="4,12 9,17 20,6"/>',
+  x: '<line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/>',
+  chevronLeft: '<polyline points="15,5 8,12 15,19"/>',
+  megaphone: '<path d="M3 10v4h3l7 4V6l-7 4H3z"/><path d="M17 8.5a3.5 3.5 0 0 1 0 7"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  messageSquare: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+};
+function icon(name, size, color){
+  size = size || 16;
+  const c = color ? `color:${color};` : '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;${c}">${ICON_PATHS[name] || ''}</svg>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Constants & Seeding                                               */
+/* ------------------------------------------------------------------ */
+const HUBS = ["Lisboa", "Cascais", "Estoril", "Carcavelos", "Oeiras", "Sintra", "Colares"];
+const LEVELS = ["Beginner", "Intermediate", "Advanced"];
+const FORMATS = {
+  Football: [
+    { label: "5-a-side", total: 10 },
+    { label: "7-a-side", total: 14 },
+    { label: "11-a-side", total: 22 },
+  ],
+  Volleyball: [
+    { label: "2v2 Beach Volleyball", total: 4 },
+    { label: "6v6 Indoor Volleyball", total: 12 }
+  ],
+};
+const STYLES = [
+  { id: "chill", label: "Chill / Friendly", icon: "coffee" },
+  { id: "competitive", label: "Sweaty / Competitive", icon: "flame" },
+  { id: "drills", label: "Training / Drills", icon: "target" },
+];
+
+const uid = () => Math.random().toString(36).slice(2, 10);
+const emptyData = () => ({ players: {}, parties: {}, friends: [] });
+
+function fmtDate(iso){
+  const d = new Date(iso);
+  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth()+1} · ${String(d.getHours()).padStart(2,"0")}:00`;
+}
+function nextDate(daysFromNow, hour){
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  d.setHours(hour,0,0,0);
+  return d.toISOString();
+}
+
+function seedData(){
+  const players = {
+    p_joao: { id:"p_joao", name:"João Silva", matches:14, reliability:96, sports:["Football"], level:"Intermediate", frequency:"3-4 times a week", homeRegion:"Lisboa", preferredRegion:"Lisboa" },
+    p_rita: { id:"p_rita", name:"Rita Costa", matches:9, reliability:100, sports:["Volleyball"], level:"Advanced", frequency:"1-2 times a week", homeRegion:"Cascais", preferredRegion:"Cascais" },
+    p_miguel: { id:"p_miguel", name:"Miguel Santos", matches:21, reliability:88, sports:["Football", "Volleyball"], level:"Advanced", frequency:"5+ times a week", homeRegion:"Estoril", preferredRegion:"Oeiras" },
+    p_ines: { id:"p_ines", name:"Inês Rocha", matches:5, reliability:100, sports:["Volleyball"], level:"Beginner", frequency:"1-2 times a week", homeRegion:"Sintra", preferredRegion:"Carcavelos" },
+  };
+  const parties = [
+    { id:"party_1", sport:"Volleyball", format:"2v2 Beach Volleyball", slotsTotal:4, hub:"Cascais", datetime:nextDate(1,18), style:"chill", hostId:"p_rita", status:"open", privacy:"public", needsGK:false,
+      slots:[ {playerId:"p_rita",name:"Rita",position:null}, {playerId:"p_joao",name:"João",position:null}, null, null ], chats: [{senderName:"Rita", text:"Hey everyone! Bring sunscreen!"}] },
+    { id:"party_2", sport:"Football", format:"5-a-side", slotsTotal:10, hub:"Estoril", datetime:nextDate(2,20), style:"competitive", hostId:"p_miguel", status:"open", privacy:"public", needsGK:true,
+      slots:[ {playerId:"p_miguel",name:"Miguel",position:"Outfield"}, {playerId:"p_ines",name:"Inês",position:"Outfield"}, ...Array(8).fill(null) ], chats: [] },
+  ];
+  return { players, parties, friends: ["p_joao", "p_rita"] };
+}
+
+/* ------------------------------------------------------------------ */
+/* App State                                                         */
+/* ------------------------------------------------------------------ */
+let state = {
+  profile: null,
+  data: seedData(),
+  screen: "onboard", // Starts at survey/onboarding
+  activePartyId: null,
+  activeProfileId: null, // For profile exploration popup
+  partyTab: "squad", // squad or chat
+  showCreate: false,
+  hubFilter: "All",
+  sportFilter: "All",
+  leaderboardSport: "Football",
+  toast: null,
+  toastTimer: null,
+  onboardStep: 0,
+  onboardForm: { name: "", sports: [], frequency: "1-2 times a week", level: "Beginner", homeRegion: "Lisboa", preferredRegion: "Lisboa" },
+  createForm: { sport: "Football", format: FORMATS.Football[0].label, needsGK: false, style: "chill", privacy: "public", privateShareType: "friends" },
+  noShows: [],
+};
+
+function flash(msg){
+  state.toast = msg;
+  render();
+  clearTimeout(state.toastTimer);
+  state.toastTimer = setTimeout(() => { state.toast = null; render(); }, 2600);
+}
+
+/* ------------------------------------------------------------------ */
+/* Actions                                                           */
+/* ------------------------------------------------------------------ */
+function completeOnboarding(){
+  const f = state.onboardForm;
+  const myId = "me_user";
+  state.profile = { id: myId, name: f.name, matches: 0, reliability: 100, ...f };
+  state.data.players[myId] = state.profile;
+  state.screen = "home";
+  flash(`Profile built! Welcome, ${f.name} 👋`);
+  render();
+}
+
+function joinSlot(party, slotIndex, position){
+  if(!state.profile) return;
+  const already = party.slots.some(s => s && s.playerId === state.profile.id);
+  if(already){ flash("You are already in this match."); return; }
+  
+  const newSlots = [...party.slots];
+  newSlots[slotIndex] = { playerId: state.profile.id, name: state.profile.name.split(" ")[0], position: position || null };
+  party.slots = newSlots;
+  if(newSlots.every(s => s !== null)) party.status = "full";
+  
+  flash("Successfully booked into the roster.");
+  render();
+}
+
+function createParty(){
+  const f = state.createForm;
+  const hub = document.getElementById("createHub").value;
+  const date = document.getElementById("createDate").value;
+  const time = document.getElementById("createTime").value;
+  if(!date){ flash("Please pick a valid date."); return; }
+  
+  const fmt = FORMATS[f.sport].find(fmtOpt => fmtOpt.label === f.format);
+  const slots = Array(fmt.total).fill(null);
+  slots[0] = { playerId: state.profile.id, name: state.profile.name.split(" ")[0], position: f.sport === "Football" ? "Outfield" : null };
+  
+  const newParty = {
+    id: uid(), sport: f.sport, format: f.format, slotsTotal: fmt.total, hub,
+    datetime: new Date(`${date}T${time}:00`).toISOString(), style: f.style,
+    needsGK: f.sport === "Football" ? f.needsGK : false, hostId: state.profile.id,
+    status: "open", privacy: f.privacy, privateShareType: f.privateShareType, slots, chats: []
+  };
+  
+  state.data.parties.unshift(newParty);
+  state.showCreate = false;
+  state.activePartyId = newParty.id;
+  state.screen = "party";
+  
+  if(f.privacy === 'private' && f.privateShareType === 'link') {
+    flash("Private match generated! Copy link to invite friends.");
+  } else {
+    flash("Match successfully hosted!");
+  }
+  render();
+}
+
+function sendChatMessage(partyId){
+  const input = document.getElementById("chatInput");
+  if(!input || !input.value.trim()) return;
+  const party = state.data.parties.find(p => p.id === partyId);
+  if(!party) return;
+  
+  party.chats.push({
+    senderName: state.profile.name.split(" ")[0],
+    text: input.value.trim()
+  });
+  input.value = "";
+  render();
+}
+
+function toggleFriend(playerId){
+  const index = state.data.friends.indexOf(playerId);
+  if(index > -1){
+    state.data.friends.splice(index, 1);
+    flash("Removed from friends list.");
+  } else {
+    state.data.friends.push(playerId);
+    flash("Friend added successfully!");
+  }
+  render();
+}
+
+/* ------------------------------------------------------------------ */
+/* UI Handlers & Dispatcher                                          */
+/* ------------------------------------------------------------------ */
+window.addEventListener("click", e => {
+  const btn = e.target.closest("[data-action]");
+  if(!btn) return;
+  const act = btn.getAttribute("data-action");
+  
+  if(act === "onboard-next"){
+    if(state.onboardStep < 5) { state.onboardStep++; render(); }
+    else { completeOnboarding(); }
+  }
+  else if(act === "onboard-back"){ state.onboardStep--; render(); }
+  else if(act === "onboard-sport"){
+    const sp = btn.getAttribute("data-value");
+    const idx = state.onboardForm.sports.indexOf(sp);
+    if(idx > -1) state.onboardForm.sports.splice(idx,1);
+    else state.onboardForm.sports.push(sp);
+    render();
+  }
+  else if(act === "onboard-freq"){ state.onboardForm.frequency = btn.getAttribute("data-value"); render(); }
+  else if(act === "onboard-level"){ state.onboardForm.level = btn.getAttribute("data-value"); render(); }
+  else if(act === "onboard-home"){ state.onboardForm.homeRegion = btn.getAttribute("data-value"); render(); }
+  else if(act === "onboard-pref"){ state.onboardForm.preferredRegion = btn.getAttribute("data-value"); render(); }
+  
+  // Navigation
+  else if(act === "nav-home"){ state.screen = "home"; render(); }
+  else if(act === "nav-calendar"){ state.screen = "calendar"; render(); }
+  else if(act === "nav-leaderboard"){ state.screen = "leaderboard"; render(); }
+  else if(act === "nav-profile"){ state.screen = "profile"; render(); }
+  
+  // Filters & Profile Popups
+  else if(act === "filter-sport"){ state.sportFilter = btn.getAttribute("data-value"); render(); }
+  else if(act === "filter-hub"){ state.hubFilter = btn.getAttribute("data-value"); render(); }
+  else if(act === "leaderboard-tab"){ state.leaderboardSport = btn.getAttribute("data-value"); render(); }
+  else if(act === "view-profile"){ state.activeProfileId = btn.getAttribute("data-id"); render(); }
+  else if(act === "close-profile"){ state.activeProfileId = null; render(); }
+  else if(act === "toggle-friend"){ toggleFriend(btn.getAttribute("data-id")); }
+  
+  // Create Party Workflows
+  else if(act === "open-create"){ state.showCreate = true; render(); }
+  else if(act === "close-create"){ state.showCreate = false; render(); }
+  else if(act === "create-sport"){
+    state.createForm.sport = btn.getAttribute("data-value");
+    state.createForm.format = FORMATS[state.createForm.sport][0].label;
+    render();
+  }
+  else if(act === "create-format"){ state.createForm.format = btn.getAttribute("data-value"); render(); }
+  else if(act === "create-privacy"){ state.createForm.privacy = btn.getAttribute("data-value"); render(); }
+  else if(act === "create-share"){ state.createForm.privateShareType = btn.getAttribute("data-value"); render(); }
+  else if(act === "create-style"){ state.createForm.style = btn.getAttribute("data-value"); render(); }
+  else if(act === "create-submit"){ createParty(); }
+  
+  // Party Details
+  else if(act === "open-party"){ state.screen = "party"; state.activePartyId = btn.getAttribute("data-id"); state.partyTab = "squad"; render(); }
+  else if(act === "back-home"){ state.screen = "home"; render(); }
+  else if(act === "party-tab"){ state.partyTab = btn.getAttribute("data-value"); render(); }
+  else if(act === "join-slot"){
+    const party = state.data.parties.find(p => p.id === state.activePartyId);
+    joinSlot(party, parseInt(btn.getAttribute("data-index")), btn.getAttribute("data-pos"));
+  }
+  else if(act === "send-chat"){ sendChatMessage(state.activePartyId); }
+});
+
+/* ------------------------------------------------------------------ */
+/* Templates & Rendering                                             */
+/* ------------------------------------------------------------------ */
+function renderOnboarding(){
+  const step = state.onboardStep;
+  const f = state.onboardForm;
+  let viewHtml = "";
+  
+  if(step === 0){
+    viewHtml = `
+      <div class="gl-display" style="font-size:18px;margin-bottom:8px;">What is your full name?</div>
+      <input class="gl-input" id="ob-name" value="${f.name}" placeholder="e.g. Sofia Martins" oninput="state.onboardForm.name=this.value;" />
+    `;
+  } else if(step === 1){
+    viewHtml = `
+      <div class="gl-display" style="font-size:18px;margin-bottom:8px;">Which sports do you play?</div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        ${["Football","Volleyball"].map(s => `
+          <button data-action="onboard-sport" data-value="${s}" class="gl-chip ${f.sports.includes(s)?"active":""}" style="flex:1;padding:16px;font-size:14px;justify-content:center;">${s}</button>
+        `).join("")}
+      </div>
+    `;
+  } else if(step === 2){
+    viewHtml = `
+      <div class="gl-display" style="font-size:18px;margin-bottom:8px;">How many times a week do you play sports?</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        ${["Less than once a week", "1-2 times a week", "3-4 times a week", "5+ times a week"].map(freq => `
+          <button data-action="onboard-freq" data-value="${freq}" class="gl-chip ${f.frequency===freq?"active":""}" style="padding:14px;justify-content:flex-start;">${freq}</button>
+        `).join("")}
+      </div>
+    `;
+  } else if(step === 3){
+    viewHtml = `
+      <div class="gl-display" style="font-size:18px;margin-bottom:8px;">What experience level are you?</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        ${LEVELS.map(l => `
+          <button data-action="onboard-level" data-value="${l}" class="gl-chip ${f.level===l?"active":""}" style="padding:14px;justify-content:flex-start;">${l}</button>
+        `).join("")}
+      </div>
+    `;
+  } else if(step === 4){
+    viewHtml = `
+      <div class="gl-display" style="font-size:18px;margin-bottom:8px;">Where do you currently live?</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+        ${HUBS.map(h => `
+          <button data-action="onboard-home" data-value="${h}" class="gl-chip ${f.homeRegion===h?"active":""}" style="padding:10px 14px;">${h}</button>
+        `).join("")}
+      </div>
+    `;
+  } else if(step === 5){
+    viewHtml = `
+      <div class="gl-display" style="font-size:18px;margin-bottom:8px;">What is your preferred playing region?</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+        ${HUBS.map(h => `
+          <button data-action="onboard-pref" data-value="${h}" class="gl-chip ${f.preferredRegion===h?"active":""}" style="padding:10px 14px;">${h}</button>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  const valid = (step === 0 ? f.name.trim().length > 0 : step === 1 ? f.sports.length > 0 : true);
+
+  return `
+    <div class="gl-scroll" style="display:flex;flex-direction:column;height:100%;">
+      <div style="margin-bottom:20px;">
+        <div class="gl-display" style="font-size:22px;margin-bottom:4px;">Game<span style="color:var(--grass-bright);">Link</span></div>
+        <div style="color:var(--muted);font-size:13px;">Player Network Survey</div>
+      </div>
+      <div class="gl-progressbar" style="margin-bottom:24px;"><div class="gl-progressfill" style="width:${((step+1)/6)*100}%"></div></div>
+      <div style="flex:1;">${viewHtml}</div>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        ${step > 0 ? `<button data-action="onboard-back" class="gl-btn gl-btn-outline" style="padding:13px 16px;">${icon("chevronLeft",16)}</button>` : ""}
+        <button data-action="onboard-next" class="gl-btn" style="flex:1;" ${valid ? "" : "disabled"}>${step === 5 ? "Complete Survey" : "Continue"}</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderHome(){
+  const filterParties = state.data.parties.filter(p => {
+    if(p.privacy === "private") return false; // Private rooms hidden from public discovery
+    if(state.sportFilter !== "All" && p.sport !== state.sportFilter) return false;
+    if(state.hubFilter !== "All" && p.hub !== state.hubFilter) return false;
+    return true;
+  });
+
+  return `
+    <div class="gl-topbar">
+      <div class="gl-logo gl-display">Game<span>Link</span></div>
+      <button data-action="open-create" class="gl-btn gl-btn-amber" style="padding:9px 14px;font-size:12px;">${icon("plus",14)} Host Game</button>
+    </div>
+    <div class="gl-scroll">
+      <div class="gl-chip-row">
+        ${["All","Football","Volleyball"].map(s => `<button data-action="filter-sport" data-value="${s}" class="gl-chip ${state.sportFilter===s?"active":""}">${s}</button>`).join("")}
+      </div>
+      <div class="gl-chip-row">
+        ${["All",...HUBS].map(h => `<button data-action="filter-hub" data-value="${h}" class="gl-chip ${state.hubFilter===h?"active":""}">${icon("mapPin",11)} ${h}</button>`).join("")}
+      </div>
+      <div class="gl-label" style="margin-top:8px;margin-bottom:12px;">Discover Open Matches</div>
+      ${filterParties.length === 0 ? `<div style="padding:40px 10px; text-align:center; color:var(--muted);">No matches match your active criteria filters.</div>` : filterParties.map(renderMatchCard).join("")}
+    </div>
+  `;
+}
+
+function renderMatchCard(party){
+  const filled = party.slots.filter(Boolean).length;
+  const styleOpt = STYLES.find(s => s.id === party.style);
+  return `
+    <div class="gl-card" data-action="open-party" data-id="${party.id}">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div class="gl-display" style="font-size:15px;">${party.sport} <span style="font-size:12px; font-weight:normal; color:var(--muted);">· ${party.format}</span></div>
+          <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;margin-top:4px;">
+            ${icon("mapPin",11)} ${party.hub} &nbsp;·&nbsp; ${icon("clock",11)} ${fmtDate(party.datetime)}
+          </div>
+        </div>
+        <span class="gl-tag ${styleOpt.id}">${party.privacy === 'private' ? icon("lock",10) : icon(styleOpt.icon,10)} ${styleOpt.label.split(" / ")[0]}</span>
+      </div>
+      <div style="display:flex;justify-content:between;align-items:center;margin-top:12px;font-size:12px;">
+        <span style="color:var(--muted); flex:1;">Roster: ${filled}/${party.slotsTotal} filled</span>
+        <span style="font-weight:700;color:var(--grass-bright);">${party.slotsTotal - filled} open slots</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderCalendar(){
+  // Finds any party where current player has filled a slot
+  const scheduled = state.data.parties.filter(p => p.slots.some(s => s && s.playerId === state.profile.id));
+  
+  return `
+    <div class="gl-topbar"><div class="gl-logo gl-display">My <span>Schedule</span></div></div>
+    <div class="gl-scroll">
+      <div class="gl-label" style="margin-bottom:12px;">Your Confirmed Match Bookings</div>
+      ${scheduled.length === 0 ? `
+        <div style="text-align:center;padding:50px 20px;color:var(--muted);">
+          ${icon("calendar",32)}
+          <div style="font-weight:700;margin-top:12px;color:var(--chalk);">Roster is Clear</div>
+          <div style="font-size:13px;margin-top:4px;">You haven't joined any rosters yet. Hop onto public lobbies to lock your spots.</div>
+        </div>
+      ` : scheduled.map(renderMatchCard).join("")}
+    </div>
+  `;
+}
+
+function renderLeaderboard(){
+  const s = state.leaderboardSport;
+  const rankers = Object.values(state.data.players)
+    .filter(p => p.sports && p.sports.includes(s))
+    .sort((a,b) => b.matches - a.matches);
+
+  return `
+    <div class="gl-topbar"><div class="gl-logo gl-display">Rankings</div></div>
+    <div class="gl-scroll">
+      <div class="gl-tabs-header">
+        <button data-action="leaderboard-tab" data-value="Football" class="gl-tab-btn ${s==="Football"?"active":""}">Football</button>
+        <button data-action="leaderboard-tab" data-value="Volleyball" class="gl-tab-btn ${s==="Volleyball"?"active":""}">Volleyball</button>
+      </div>
+      
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${rankers.length === 0 ? `<div style="padding:20px;color:var(--muted);text-align:center;">No logged profile historical information for this bracket.</div>` : rankers.map((p, i) => `
+          <div class="gl-card" data-action="view-profile" data-id="${p.id}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
+            <div class="gl-display" style="font-size:16px;color:var(--grass-bright);width:20px;">#${i+1}</div>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:14px;">${p.name}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">Level: ${p.level} · Preferred: ${p.preferredRegion}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="gl-display" style="font-size:13px;color:var(--amber);">${p.matches} Matches</div>
+              <div style="font-size:11px;color:var(--muted);">${p.reliability}% Match Check-In</div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderProfile(){
+  const p = state.profile;
+  const myFriends = state.data.friends.map(fid => state.data.players[fid]).filter(Boolean);
+  
+  return `
+    <div class="gl-topbar"><div class="gl-logo gl-display">My Profile</div></div>
+    <div class="gl-scroll">
+      <div class="gl-card" style="padding:18px;background:linear-gradient(135deg, var(--surface), var(--surface-2));">
+        <div class="gl-display" style="font-size:20px;color:var(--grass-bright);">${p.name}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">Resident of: <strong>${p.homeRegion}</strong></div>
+        
+        <div style="display:flex;gap:16px;margin-top:16px;border-top:1px solid var(--line);padding-top:12px;">
+          <div><div class="gl-display" style="color:var(--amber);font-size:14px;">${p.matches}</div><div style="font-size:11px;color:var(--muted);">Matches</div></div>
+          <div><div class="gl-display" style="color:var(--grass-bright);font-size:14px;">${p.reliability}%</div><div style="font-size:11px;color:var(--muted);">Reliability</div></div>
+          <div><div class="gl-display" style="color:var(--chalk);font-size:14px;">${p.level}</div><div style="font-size:11px;color:var(--muted);">Skill Grade</div></div>
+        </div>
+      </div>
+
+      <div class="gl-label" style="margin-top:18px;">Survey Metrics</div>
+      <div class="gl-card" style="font-size:13px;display:flex;flex-direction:column;gap:8px;">
+        <div><span style="color:var(--muted)">Active Sports:</span> ${p.sports.join(", ")}</div>
+        <div><span style="color:var(--muted)">Weekly Commitment:</span> ${p.frequency}</div>
+        <div><span style="color:var(--muted)">Target Lobbies Area:</span> ${p.preferredRegion}</div>
+      </div>
+
+      <div class="gl-label" style="margin-top:18px;">My Network Friends (${myFriends.length})</div>
+      ${myFriends.length === 0 ? `<div style="font-size:13px;color:var(--muted);padding:4px;">No friends added yet. Browse profiles on the leaderboard or matches to assemble your squad!</div>` : `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${myFriends.map(f => `
+            <div class="gl-chip" data-action="view-profile" data-id="${f.id}" style="justify-content:space-between;padding:10px 14px;border-radius:10px;">
+              <span>${f.name} (${f.level})</span>
+              <span style="color:var(--grass-bright);font-size:11px;">View Profile &rarr;</span>
+            </div>
+          `).join("")}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function renderPartyDetail(){
+  const party = state.data.parties.find(p => p.id === state.activePartyId);
+  if(!party) return `<div class="gl-scroll">Match entry active point reference expired.</div>`;
+  
+  const filled = party.slots.filter(Boolean).length;
+  
+  let tabContent = "";
+  if(state.partyTab === "squad"){
+    tabContent = `
+      <div class="gl-label">Squad Roster Grid (${filled}/${party.slotsTotal})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+        ${party.slots.map((slot, i) => {
+          if(slot) {
+            return `<div class="gl-slot filled" data-action="view-profile" data-id="${slot.playerId}">${slot.name.slice(0,3)}</div>`;
+          } else {
+            return `<div class="gl-slot" data-action="join-slot" data-index="${i}">+</div>`;
+          }
+        }).join("")}
+      </div>
+      <p style="font-size:12px;color:var(--muted);">💡 Tap filled roster frames to look inside user dynamic player profiles.</p>
+    `;
+  } else {
+    // Chat layout tab
+    tabContent = `
+      <div class="gl-chat-box">
+        <div class="gl-chat-messages">
+          ${party.chats.length === 0 ? `<div style="margin:auto;font-size:12px;color:var(--muted);">Room initialized. Start messaging coordinating players!</div>` : party.chats.map(msg => `
+            <div class="gl-chat-msg ${msg.senderName === state.profile.name.split(" ")[0] ? "me" : "other"}">
+              <strong style="display:block;font-size:10px;opacity:0.8;">${msg.senderName}</strong>
+              ${msg.text}
+            </div>
+          `).join("")}
+        </div>
+        <div class="gl-chat-input-row">
+          <input type="text" id="chatInput" placeholder="Message match room..." class="gl-input" style="border:none;border-radius:0;flex:1;" onkeydown="if(event.key==='Enter') sendChatMessage('${party.id}');"/>
+          <button data-action="send-chat" class="gl-btn" style="border-radius:0;padding:0 16px;">Send</button>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="gl-topbar">
+      <button data-action="back-home" class="gl-navitem" style="padding:0;">${icon("chevronLeft",20)}</button>
+      <div class="gl-display" style="font-size:14px;">${party.sport} Match Lobby</div>
+      <div style="width:20px;"></div>
+    </div>
+    <div class="gl-scroll">
+      <div class="gl-card" style="background:var(--surface-2);">
+        <div class="gl-display" style="font-size:18px;">${party.sport} Lobby</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Hub Area: ${party.hub} | Schedule Time: ${fmtDate(party.datetime)}</div>
+        <div style="margin-top:10px; display:flex; gap:6px;">
+          <span class="gl-tag competitive">${party.privacy.toUpperCase()} SQUAD</span>
+          ${party.privacy === "private" ? `<span class="gl-tag chill">Share strategy: ${party.privateShareType}</span>` : ""}
+        </div>
+        
+        ${party.privacy === "private" && party.privateShareType === "link" ? `
+          <div style="margin-top:12px;background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;font-size:11px;">
+            <span style="color:var(--amber)">Private Access Link:</span> <code style="color:var(--grass-bright)">gamelink.app/join/p-${party.id}</code>
+          </div>
+        ` : ""}
+      </div>
+
+      <div class="gl-tabs-header" style="margin-top:16px;">
+        <button data-action="party-tab" data-value="squad" class="gl-tab-btn ${state.partyTab==="squad"?"active":""}">Roster</button>
+        <button data-action="party-tab" data-value="chat" class="gl-tab-btn ${state.partyTab==="chat"?"active":""}">${icon("messageSquare",12)} Match Chat (${party.chats.length})</button>
+      </div>
+
+      ${tabContent}
+    </div>
+  `;
+}
+
+function renderCreateModal(){
+  const f = state.createForm;
+  return `
+    <div class="gl-modal-backdrop" data-action="close-create">
+      <div class="gl-modal" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="gl-display" style="font-size:16px;">Host Match</div>
+          <button data-action="close-create" class="gl-navitem" style="padding:0;">${icon("x",18)}</button>
+        </div>
+
+        <label class="gl-label">Sport Selection</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          ${["Football","Volleyball"].map(s => `<button data-action="create-sport" data-value="${s}" class="gl-chip ${f.sport===s?"active":""}" style="flex:1;justify-content:center;padding:10px;">${s}</button>`).join("")}
+        </div>
+
+        <label class="gl-label">Roster Configuration Format</label>
+        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+          ${FORMATS[f.sport].map(fmtOpt => `<button data-action="create-format" data-value="${fmtOpt.label}" class="gl-chip ${f.format===fmtOpt.label?"active":""}">${fmtOpt.label}</button>`).join("")}
+        </div>
+
+        <label class="gl-label">Privacy Visibility</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button data-action="create-privacy" data-value="public" class="gl-chip ${f.privacy==="public"?"active":""}" style="flex:1;justify-content:center;">${icon("globe",12)} Public Discovery</button>
+          <button data-action="create-privacy" data-value="private" class="gl-chip ${f.privacy==="private"?"active":""}" style="flex:1;justify-content:center;">${icon("lock",12)} Private Invite Only</button>
+        </div>
+
+        ${f.privacy === "private" ? `
+          <label class="gl-label" style="color:var(--amber);">Private Distribution Pipeline</label>
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <button data-action="create-share" data-value="friends" class="gl-chip ${f.privateShareType==="friends"?"active":""}" style="flex:1;justify-content:center;">Share to Friends App Feed</button>
+            <button data-action="create-share" data-value="link" class="gl-chip ${f.privateShareType==="link"?"active":""}" style="flex:1;justify-content:center;">Generate Private Token Link</button>
+          </div>
+        ` : ""}
+
+        <label class="gl-label">Hub Placement</label>
+        <select class="gl-select" id="createHub" style="margin-bottom:12px;">
+          ${HUBS.map(h => `<option value="${h}">${h}</option>`).join("")}
+        </select>
+
+        <div class="gl-row" style="margin-bottom:16px;">
+          <div class="gl-col">
+            <label class="gl-label">Target Date</label>
+            <input type="date" class="gl-input" id="createDate" value="${new Date().toISOString().split("T")[0]}" />
+          </div>
+          <div class="gl-col">
+            <label class="gl-label">Start Time</label>
+            <input type="time" class="gl-input" id="createTime" value="19:00" />
+          </div>
+        </div>
+
+        <button data-action="create-submit" class="gl-btn" style="width:100%;margin-top:6px;">Deploy Match Lobbies</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderProfileExploreModal(){
+  const p = state.data.players[state.activeProfileId];
+  if(!p) return "";
+  const isFriend = state.data.friends.includes(p.id);
+  const isMe = p.id === state.profile?.id;
+
+  return `
+    <div class="gl-modal-backdrop" data-action="close-profile">
+      <div class="gl-modal" onclick="event.stopPropagation()">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div class="gl-display" style="font-size:16px;color:var(--grass-bright);">Player Passport Overview</div>
+          <button data-action="close-profile" class="gl-navitem" style="padding:0;">${icon("x",18)}</button>
+        </div>
+
+        <div class="gl-card" style="background:var(--surface-2);margin-bottom:14px;padding:14px;">
+          <div class="gl-display" style="font-size:18px;">${p.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;">Experience Rating Level: <strong style="color:var(--amber);">${p.level}</strong></div>
+        </div>
+
+        <label class="gl-label">Detailed Metrics Survey Feedback</label>
+        <div class="gl-card" style="font-size:13px;line-height:1.6;cursor:default;">
+          <div>🏁 <strong>Plays Sports:</strong> ${p.sports?.join(", ") || "None selected"}</div>
+          <div>🔥 <strong>Frequency Cadence:</strong> ${p.frequency || "Not evaluated"}</div>
+          <div>📍 <strong>Home Location Space:</strong> ${p.homeRegion || "Unknown"}</div>
+          <div>🎯 <strong>Preferred Match Playground:</strong> ${p.preferredRegion || "Unknown"}</div>
+        </div>
+
+        <div style="display:flex;gap:16px;margin:12px 0;padding:4px;">
+          <div><div class="gl-display" style="color:var(--amber);">${p.matches}</div><div style="font-size:11px;color:var(--muted);">Total Matches</div></div>
+          <div><div class="gl-display" style="color:var(--grass-bright);">${p.reliability}%</div><div style="font-size:11px;color:var(--muted);">Attendance Trace</div></div>
+        </div>
+
+        ${!isMe ? `
+          <button data-action="toggle-friend" data-id="${p.id}" class="gl-btn ${isFriend ? "gl-btn-outline" : ""}" style="width:100%;margin-top:8px;">
+            ${isFriend ? "Remove Friend Relation" : "Add Friend Connection"}
+          </button>
+        ` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function renderBottomNav(){
+  return `
+    <div class="gl-bottomnav">
+      <button data-action="nav-home" class="gl-navitem ${state.screen==="home"?"active":""}">${icon("home",16)}<span>Discover</span></button>
+      <button data-action="nav-calendar" class="gl-navitem ${state.screen==="calendar"?"active":""}">${icon("calendar",16)}<span>Calendar</span></button>
+      <button data-action="nav-leaderboard" class="gl-navitem ${state.screen==="leaderboard"?"active":""}">${icon("trophy",16)}<span>Rankings</span></button>
+      <button data-action="nav-profile" class="gl-navitem ${state.screen==="profile"?"active":""}">${icon("user",16)}<span>Me</span></button>
+    </div>
+  `;
+}
+
+function render(){
+  const root = document.getElementById("app");
+  if(!root) return;
+  
+  if(state.screen === "onboard"){
+    root.innerHTML = `<div class="gl-root">${renderOnboarding()}</div>`;
+    return;
+  }
+  
+  let content = "";
+  if(state.screen === "home") content = renderHome();
+  else if(state.screen === "calendar") content = renderCalendar();
+  else if(state.screen === "leaderboard") content = renderLeaderboard();
+  else if(state.screen === "profile") content = renderProfile();
+  else if(state.screen === "party") content = renderPartyDetail();
+  
+  root.innerHTML = `
+    <div class="gl-root">
+      ${content}
+      ${renderBottomNav()}
+      ${state.showCreate ? renderCreateModal() : ""}
+      ${state.activeProfileId ? renderProfileExploreModal() : ""}
+      ${state.toast ? `<div class="gl-toast">${state.toast}</div>` : ""}
+    </div>
+  `;
+}
+
+// Global initialization sequence execution
+render();
+</script>
+</body>
+</html>
